@@ -1,35 +1,41 @@
 import streamlit as st
-from datetime import datetime
+from datetime import date, timedelta
 
-# =========================================================
-# PAGE CONFIG
-# =========================================================
+
+# ============================================================
+# PAGE CONFIGURATION
+# ============================================================
 
 st.set_page_config(
     page_title="MYBIO — Ancient Wisdom. Modern You.",
     page_icon="✦",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
-# =========================================================
+
+# ============================================================
 # SESSION STATE
-# =========================================================
+# ============================================================
 
 DEFAULTS = {
     "page": "Home",
-    "profile_complete": False,
     "answers": {},
     "question_index": 0,
+    "profile_complete": False,
+    "ayurvedic_type": "",
     "vata": 0,
     "pitta": 0,
     "kapha": 0,
-    "ayurvedic_type": "",
-    "streak": 0,
     "xp": 0,
-    "completed_challenges": [],
+    "streak": 0,
     "started": False,
-    "last_completed": None
+    "active_challenge": False,
+    "completed_challenges": [],
+    "badges": [],
+    "last_reward": None,
+    "last_completed_date": None,
+    "journey_started": False,
 }
 
 for key, value in DEFAULTS.items():
@@ -37,9 +43,9 @@ for key, value in DEFAULTS.items():
         st.session_state[key] = value
 
 
-# =========================================================
+# ============================================================
 # GLOBAL CSS
-# =========================================================
+# ============================================================
 
 st.markdown(
     """
@@ -47,155 +53,64 @@ st.markdown(
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
 
-
-/* =========================================================
-   COLOR SYSTEM
-   ========================================================= */
-
 :root {
-    --ivory: #FBF8F1;
-    --cream: #F4EFE5;
-    --white: #FFFFFF;
-
-    --sage: #A9B9A2;
-    --sage-soft: #DDE6D7;
-
-    --peach: #E8B99A;
-    --peach-soft: #F5DED0;
-
-    --gold: #C9A66B;
-    --gold-soft: #EBD9B6;
-
-    --olive: #65745D;
-
-    --ink: #29332E;
-    --ink-soft: #56625B;
-
-    --line: rgba(41, 51, 46, 0.10);
+    --cream: #FAF7F1;
+    --paper: #FFFFFF;
+    --paper-soft: #F5F0E7;
+    --sage: #B8C9B3;
+    --sage-light: #E8EFE4;
+    --sage-dark: #647762;
+    --peach: #E5B29D;
+    --peach-light: #F7E3D9;
+    --gold: #C5A46D;
+    --gold-light: #F3E8D1;
+    --rose: #D99A9A;
+    --ink: #29332F;
+    --muted: #78817B;
+    --border: #E8E1D6;
+    --shadow: 0 18px 50px rgba(64, 65, 54, 0.09);
 }
 
-
-/* =========================================================
-   BASE
-   ========================================================= */
-
-html,
-body,
-[class*="css"] {
+html, body, [class*="css"] {
     font-family: "DM Sans", sans-serif;
 }
 
 .stApp {
     background:
-        radial-gradient(
-            circle at 8% 8%,
-            rgba(232,185,154,0.18),
-            transparent 25%
-        ),
-        radial-gradient(
-            circle at 92% 12%,
-            rgba(169,185,162,0.18),
-            transparent 28%
-        ),
-        radial-gradient(
-            circle at 80% 85%,
-            rgba(201,166,107,0.10),
-            transparent 25%
-        ),
-        linear-gradient(
-            135deg,
-            #FBF8F1 0%,
-            #FFFDF9 48%,
-            #F1F4EC 100%
-        );
-
+        radial-gradient(circle at 8% 12%, rgba(229,178,157,0.20), transparent 25%),
+        radial-gradient(circle at 90% 8%, rgba(184,201,179,0.30), transparent 28%),
+        radial-gradient(circle at 80% 80%, rgba(197,164,109,0.12), transparent 25%),
+        var(--cream);
     color: var(--ink);
-    min-height: 100vh;
 }
 
-.block-container {
-    max-width: 1380px;
-    padding-top: 1.2rem;
-    padding-bottom: 4rem;
-}
-
+/* Remove Streamlit chrome */
 #MainMenu {
     visibility: hidden;
+}
+
+header[data-testid="stHeader"] {
+    background: transparent;
 }
 
 footer {
     visibility: hidden;
 }
 
-header {
-    visibility: hidden;
+.block-container {
+    max-width: 1250px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
 }
 
+/* Main animations */
 
-/* =========================================================
-   BACKGROUND MOTION
-   ========================================================= */
-
-.motion-orb {
-    position: fixed;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.orb-1 {
-    width: 260px;
-    height: 260px;
-    left: -100px;
-    top: 18%;
-    background: rgba(232,185,154,0.13);
-    filter: blur(5px);
-    animation: drift1 12s ease-in-out infinite alternate;
-}
-
-.orb-2 {
-    width: 230px;
-    height: 230px;
-    right: -90px;
-    bottom: 15%;
-    background: rgba(169,185,162,0.16);
-    filter: blur(5px);
-    animation: drift2 15s ease-in-out infinite alternate;
-}
-
-.orb-3 {
-    width: 90px;
-    height: 90px;
-    right: 18%;
-    top: 40%;
-    background: rgba(201,166,107,0.10);
-    animation: floating 6s ease-in-out infinite;
-}
-
-@keyframes drift1 {
-    from {
-        transform: translate(0,0);
-    }
-    to {
-        transform: translate(45px,55px);
-    }
-}
-
-@keyframes drift2 {
-    from {
-        transform: translate(0,0);
-    }
-    to {
-        transform: translate(-40px,-45px);
-    }
-}
-
-@keyframes floating {
-    0%,100% {
-        transform: translateY(0);
+@keyframes floatSlow {
+    0%, 100% {
+        transform: translateY(0px);
     }
     50% {
-        transform: translateY(-20px);
+        transform: translateY(-14px);
     }
 }
 
@@ -210,657 +125,443 @@ header {
     }
 }
 
-@keyframes softPulse {
-    0%,100% {
-        transform: scale(1);
-        opacity: 0.75;
+@keyframes pulseSoft {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(197,164,109,0.12);
     }
     50% {
-        transform: scale(1.08);
-        opacity: 1;
+        box-shadow: 0 0 0 18px rgba(197,164,109,0);
     }
 }
 
-@keyframes spin {
+@keyframes shimmer {
+    0% {
+        background-position: -600px 0;
+    }
+    100% {
+        background-position: 600px 0;
+    }
+}
+
+@keyframes rotateSlow {
+    from {
+        transform: rotate(0deg);
+    }
     to {
         transform: rotate(360deg);
     }
 }
 
-
-/* =========================================================
-   BRAND
-   ========================================================= */
-
-.brand-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 5;
+.fade-up {
+    animation: fadeUp 0.7s ease both;
 }
 
+.delay-1 {
+    animation-delay: 0.12s;
+}
+
+.delay-2 {
+    animation-delay: 0.24s;
+}
+
+.delay-3 {
+    animation-delay: 0.36s;
+}
+
+
+/* ============================================================
+   BRAND
+   ============================================================ */
+
 .brand {
-    font-family: "Playfair Display", serif;
-    font-size: 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.brand-symbol {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--sage), var(--peach));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: white;
+    box-shadow: 0 8px 25px rgba(99, 112, 94, 0.18);
+    animation: floatSlow 4s ease-in-out infinite;
+}
+
+.brand-name {
+    font-size: 22px;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.16em;
     color: var(--ink);
 }
 
-.brand span {
-    color: var(--peach);
-}
-
-.brand-caption {
-    color: var(--ink-soft);
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+.brand-sub {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    margin-top: 2px;
 }
 
 
-/* =========================================================
+/* ============================================================
    NAVIGATION
-   ========================================================= */
+   ============================================================ */
 
-div.stButton > button {
-    border-radius: 15px !important;
-    border: 1px solid rgba(41,51,46,0.09) !important;
-    background: rgba(255,255,255,0.62) !important;
-    color: var(--ink) !important;
+.nav-wrap {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(232,225,214,0.9);
+    border-radius: 22px;
+    padding: 8px;
+    margin-bottom: 2.4rem;
+    box-shadow: 0 10px 30px rgba(50,50,40,0.05);
+}
 
+.stButton > button {
+    border-radius: 14px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--muted) !important;
     font-weight: 600 !important;
-
-    min-height: 43px !important;
-
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease,
-        background 0.25s ease,
-        border-color 0.25s ease !important;
-
-    box-shadow:
-        0 6px 20px rgba(41,51,46,0.045) !important;
+    transition: all 0.25s ease !important;
+    min-height: 42px;
 }
 
-div.stButton > button:hover {
+.stButton > button:hover {
+    transform: translateY(-2px);
+    background: var(--sage-light) !important;
+    color: var(--ink) !important;
+    border-color: transparent !important;
+}
+
+.stButton > button[kind="primary"] {
+    background: linear-gradient(
+        135deg,
+        var(--sage-dark),
+        #81947B
+    ) !important;
+    color: white !important;
+    box-shadow: 0 10px 24px rgba(100,119,98,0.22) !important;
+}
+
+.stButton > button[kind="primary"]:hover {
     transform: translateY(-3px) !important;
-
-    background: #FFFFFF !important;
-
-    border-color: rgba(232,185,154,0.55) !important;
-
-    box-shadow:
-        0 12px 28px rgba(41,51,46,0.09) !important;
-}
-
-div.stButton > button:active {
-    transform: translateY(0) !important;
+    box-shadow: 0 14px 30px rgba(100,119,98,0.28) !important;
 }
 
 
-/* Primary buttons */
-
-.primary-btn div.stButton > button {
-    background:
-        linear-gradient(
-            135deg,
-            #687A61,
-            #829579
-        ) !important;
-
-    color: white !important;
-
-    border: none !important;
-
-    box-shadow:
-        0 12px 28px rgba(101,116,93,0.22) !important;
-}
-
-.primary-btn div.stButton > button:hover {
-    background:
-        linear-gradient(
-            135deg,
-            #596A53,
-            #74866D
-        ) !important;
-
-    color: white !important;
-}
-
-
-/* =========================================================
+/* ============================================================
    HERO
-   ========================================================= */
+   ============================================================ */
 
 .hero {
     position: relative;
     overflow: hidden;
-
-    min-height: 555px;
-
-    padding: 4.5rem 5rem;
-
-    border-radius: 42px;
-
+    min-height: 530px;
+    border-radius: 38px;
+    padding: 70px 70px;
     background:
         linear-gradient(
-            120deg,
+            135deg,
             rgba(255,255,255,0.94),
-            rgba(249,240,229,0.80)
+            rgba(244,239,228,0.94)
         );
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    animation: fadeUp 0.8s ease both;
+}
 
-    border: 1px solid rgba(41,51,46,0.07);
+.hero::before {
+    content: "";
+    position: absolute;
+    width: 330px;
+    height: 330px;
+    border-radius: 50%;
+    background: rgba(184,201,179,0.34);
+    right: -100px;
+    top: -100px;
+    animation: floatSlow 6s ease-in-out infinite;
+}
 
-    box-shadow:
-        0 28px 80px rgba(72,75,65,0.10);
-
-    animation: fadeUp 0.8s ease;
+.hero::after {
+    content: "";
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(229,178,157,0.20);
+    left: -80px;
+    bottom: -80px;
+    animation: floatSlow 7s ease-in-out infinite reverse;
 }
 
 .hero-content {
     position: relative;
-    z-index: 4;
-
-    max-width: 720px;
+    z-index: 2;
+    max-width: 760px;
 }
 
 .eyebrow {
     display: inline-block;
-
-    padding: 0.55rem 0.9rem;
-
-    border-radius: 100px;
-
-    background: rgba(232,185,154,0.15);
-
-    color: #9C684D;
-
-    font-size: 0.72rem;
+    padding: 9px 16px;
+    border-radius: 50px;
+    background: var(--sage-light);
+    color: var(--sage-dark);
+    font-size: 11px;
     font-weight: 700;
-
-    letter-spacing: 0.15em;
-
-    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 24px;
 }
 
 .hero h1 {
     font-family: "Playfair Display", serif;
-
-    font-size: clamp(
-        3.5rem,
-        7vw,
-        6.4rem
-    );
-
-    line-height: 0.96;
-
-    margin: 1.3rem 0 0;
-
-    letter-spacing: -0.055em;
-
+    font-size: clamp(48px, 6vw, 82px);
+    line-height: 0.98;
+    margin: 0;
     color: var(--ink);
+    letter-spacing: -0.04em;
 }
 
-.hero h1 em {
-    font-style: normal;
-    color: var(--peach);
+.hero h1 span {
+    color: var(--sage-dark);
+    font-style: italic;
 }
 
-.hero-subtitle {
-    margin-top: 1.5rem;
-
-    font-family: "Playfair Display", serif;
-
-    font-size: 1.42rem;
-
-    color: var(--olive);
-}
-
-.hero-description {
-    max-width: 630px;
-
-    margin-top: 1.1rem;
-
-    color: var(--ink-soft);
-
+.hero p {
+    max-width: 650px;
+    font-size: 18px;
     line-height: 1.8;
-
-    font-size: 1rem;
+    color: var(--muted);
+    margin-top: 28px;
 }
 
-
-/* =========================================================
-   HERO ORBIT
-   ========================================================= */
-
-.hero-visual {
-    position: absolute;
-
-    right: 7%;
-    top: 18%;
-
-    width: 330px;
-    height: 330px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.tagline {
+    margin-top: 25px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--gold);
 }
 
 .orbit {
     position: absolute;
-
-    width: 285px;
-    height: 285px;
-
-    border: 1px solid rgba(101,116,93,0.20);
-
+    right: 8%;
+    bottom: 15%;
+    width: 190px;
+    height: 190px;
+    border: 1px solid rgba(100,119,98,0.25);
     border-radius: 50%;
-
-    animation: spin 22s linear infinite;
+    animation: rotateSlow 18s linear infinite;
 }
 
 .orbit::before {
     content: "";
-
     position: absolute;
-
-    width: 20px;
-    height: 20px;
-
-    top: -10px;
-    left: 50%;
-
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-
     background: var(--peach);
-
-    box-shadow:
-        0 0 28px rgba(232,185,154,0.65);
-}
-
-.orbit::after {
-    content: "";
-
-    position: absolute;
-
-    width: 13px;
-    height: 13px;
-
-    right: -6px;
-    top: 50%;
-
-    border-radius: 50%;
-
-    background: var(--gold);
-}
-
-.hero-core {
-    width: 145px;
-    height: 145px;
-
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background:
-        linear-gradient(
-            145deg,
-            #FFFFFF,
-            #F3E9DB
-        );
-
-    border: 1px solid rgba(201,166,107,0.30);
-
-    box-shadow:
-        0 20px 55px rgba(72,75,65,0.13);
-
-    font-family: "Playfair Display", serif;
-
-    font-size: 1.7rem;
-
-    color: var(--olive);
-
-    animation: softPulse 5s ease-in-out infinite;
+    top: 8px;
+    left: 50%;
+    box-shadow: 0 0 25px rgba(229,178,157,0.5);
 }
 
 
-/* =========================================================
-   TAGLINE
-   ========================================================= */
-
-.tagline {
-    text-align: center;
-
-    margin: 2rem 0 3rem;
-
-    font-size: 0.78rem;
-
-    font-weight: 700;
-
-    letter-spacing: 0.18em;
-
-    color: var(--olive);
-}
-
-.tagline span {
-    color: var(--peach);
-
-    margin: 0 0.7rem;
-}
-
-
-/* =========================================================
+/* ============================================================
    SECTION HEADINGS
-   ========================================================= */
+   ============================================================ */
 
 .section-label {
-    color: #A57A59;
-
-    font-size: 0.72rem;
-
+    font-size: 11px;
     font-weight: 700;
-
-    letter-spacing: 0.16em;
-
+    letter-spacing: 0.18em;
+    color: var(--gold);
     text-transform: uppercase;
+    margin-bottom: 8px;
 }
 
 .section-title {
     font-family: "Playfair Display", serif;
-
+    font-size: 38px;
     color: var(--ink);
-
-    font-size: clamp(
-        2.3rem,
-        4vw,
-        3.4rem
-    );
-
-    line-height: 1.05;
-
-    margin-top: 0.35rem;
-
-    letter-spacing: -0.025em;
+    margin-bottom: 8px;
 }
 
-.section-text {
-    color: var(--ink-soft);
-
-    max-width: 720px;
-
-    line-height: 1.75;
+.section-description {
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 25px;
 }
 
 
-/* =========================================================
-   HOME FEATURE CARDS
-   ========================================================= */
-
-.feature-grid {
-    margin-top: 2rem;
-}
+/* ============================================================
+   FEATURE CARDS
+   ============================================================ */
 
 .feature-card {
-    position: relative;
-
-    min-height: 245px;
-
-    padding: 2rem;
-
-    border-radius: 28px;
-
-    background:
-        rgba(255,255,255,0.76);
-
-    border:
-        1px solid rgba(41,51,46,0.08);
-
-    box-shadow:
-        0 12px 35px rgba(41,51,46,0.055);
-
-    transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease;
-
-    animation: fadeUp 0.7s ease;
+    background: rgba(255,255,255,0.88);
+    border: 1px solid var(--border);
+    border-radius: 25px;
+    padding: 28px;
+    min-height: 200px;
+    box-shadow: 0 12px 35px rgba(60,60,50,0.06);
+    transition: all 0.3s ease;
+    animation: fadeUp 0.7s ease both;
 }
 
 .feature-card:hover {
-    transform: translateY(-8px);
-
-    box-shadow:
-        0 24px 50px rgba(41,51,46,0.10);
-}
-
-.feature-number {
-    font-family: "Playfair Display", serif;
-
-    font-size: 3rem;
-
-    color: var(--peach-soft);
-
-    line-height: 1;
+    transform: translateY(-7px);
+    box-shadow: 0 22px 50px rgba(60,60,50,0.11);
 }
 
 .feature-icon {
-    font-size: 1.8rem;
-
-    margin-top: 0.4rem;
+    font-size: 28px;
+    margin-bottom: 20px;
 }
 
 .feature-card h3 {
     font-family: "Playfair Display", serif;
-
-    color: var(--ink);
-
-    font-size: 1.45rem;
-
-    margin-top: 0.8rem;
+    font-size: 22px;
+    margin-bottom: 10px;
 }
 
 .feature-card p {
-    color: var(--ink-soft);
-
-    font-size: 0.92rem;
-
-    line-height: 1.7;
+    color: var(--muted);
+    line-height: 1.65;
 }
 
 
-/* =========================================================
-   JOURNEY INTRO
-   ========================================================= */
+/* ============================================================
+   JOURNEY
+   ============================================================ */
 
-.journey-banner {
-    margin: 2rem 0;
-
-    padding: 1.5rem 1.8rem;
-
-    border-radius: 25px;
-
-    background:
-        linear-gradient(
-            110deg,
-            rgba(221,230,215,0.65),
-            rgba(245,222,208,0.45)
-        );
-
-    border: 1px solid rgba(41,51,46,0.06);
-
-    animation: fadeUp 0.7s ease;
+.journey-shell {
+    background: rgba(255,255,255,0.86);
+    border: 1px solid var(--border);
+    border-radius: 32px;
+    padding: 42px;
+    box-shadow: var(--shadow);
+    animation: fadeUp 0.6s ease both;
 }
 
-
-/* =========================================================
-   QUESTIONNAIRE
-   ========================================================= */
-
-.question-wrapper {
-    max-width: 980px;
-
-    margin: 2rem auto 0;
-
-    animation: fadeUp 0.55s ease;
-}
-
-.question-header {
-    text-align: center;
-
-    margin-bottom: 1.8rem;
-}
-
-.question-card {
-    padding: 3rem;
-
-    border-radius: 36px;
-
-    background:
-        rgba(255,255,255,0.84);
-
-    border:
-        1px solid rgba(41,51,46,0.08);
-
-    box-shadow:
-        0 25px 70px rgba(41,51,46,0.085);
-}
-
-.question-count {
-    color: #A57A59;
-
-    font-size: 0.74rem;
-
+.step-number {
+    color: var(--gold);
     font-weight: 700;
-
-    letter-spacing: 0.15em;
-
-    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.14em;
 }
 
 .question-title {
     font-family: "Playfair Display", serif;
-
-    color: var(--ink);
-
-    font-size: 2.35rem;
-
+    font-size: clamp(30px, 4vw, 46px);
     line-height: 1.15;
-
-    margin-top: 0.6rem;
+    margin: 15px 0 12px;
+    color: var(--ink);
 }
 
 .question-help {
-    color: var(--ink-soft);
-
+    color: var(--muted);
     line-height: 1.7;
-
-    margin-bottom: 1.7rem;
+    margin-bottom: 30px;
 }
 
-
-/* Progress */
-
-.progress-background {
-    height: 8px;
-
-    background: #EAE8DF;
-
-    border-radius: 100px;
-
+.progress-track {
+    height: 7px;
+    background: #EAE5DC;
+    border-radius: 20px;
     overflow: hidden;
-
-    margin: 0.8rem 0 2rem;
+    margin: 16px 0 35px;
 }
 
-.progress-value {
+.progress-fill {
     height: 100%;
-
-    border-radius: 100px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #9CAF91,
-            #E3B28F
-        );
-
+    border-radius: 20px;
+    background: linear-gradient(
+        90deg,
+        var(--sage-dark),
+        var(--gold),
+        var(--peach)
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
     transition: width 0.5s ease;
 }
 
 
-/* =========================================================
-   CHOICE CARDS
-   ========================================================= */
+/* ============================================================
+   ANSWER CARDS
+   ============================================================ */
 
-.choice-title {
+.answer-card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 18px 20px;
+    margin-bottom: 10px;
+    transition: all 0.25s ease;
+}
+
+.answer-card:hover {
+    border-color: var(--sage);
+    transform: translateX(4px);
+    box-shadow: 0 10px 25px rgba(60,60,50,0.06);
+}
+
+.answer-card.selected {
+    border-color: var(--sage-dark);
+    background: var(--sage-light);
+    box-shadow: 0 10px 25px rgba(100,119,98,0.12);
+}
+
+.answer-title {
+    font-weight: 700;
     color: var(--ink);
-
-    font-weight: 600;
-
-    margin-bottom: 0.4rem;
 }
 
-.choice-description {
-    color: var(--ink-soft);
-
-    font-size: 0.86rem;
-
-    line-height: 1.55;
+.answer-description {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
 }
 
 
-/* =========================================================
-   NUMBER INPUT
-   ========================================================= */
+/* ============================================================
+   INPUTS
+   ============================================================ */
 
-div[data-testid="stNumberInput"] input {
-    background: #FFFDF9 !important;
-
-    border: 1px solid rgba(41,51,46,0.12) !important;
-
-    border-radius: 17px !important;
-
+div[data-testid="stNumberInput"] input,
+div[data-testid="stTextInput"] input {
+    background: white !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
     color: var(--ink) !important;
-
-    min-height: 54px !important;
-
-    font-size: 1rem !important;
 }
 
-div[data-testid="stNumberInput"] input:focus {
-    border-color: var(--peach) !important;
-
-    box-shadow:
-        0 0 0 3px rgba(232,185,154,0.13) !important;
+div[data-testid="stNumberInput"] input:focus,
+div[data-testid="stTextInput"] input:focus {
+    border-color: var(--sage-dark) !important;
+    box-shadow: 0 0 0 3px rgba(100,119,98,0.10) !important;
 }
 
 
-/* =========================================================
-   WELLNESS DASHBOARD
-   ========================================================= */
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
 
 .metric-card {
-    padding: 1.5rem;
-
-    min-height: 150px;
-
-    border-radius: 25px;
-
-    background:
-        rgba(255,255,255,0.78);
-
-    border:
-        1px solid rgba(41,51,46,0.08);
-
-    box-shadow:
-        0 12px 32px rgba(41,51,46,0.05);
-
-    transition: transform 0.25s ease;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 25px;
+    min-height: 145px;
+    box-shadow: 0 12px 35px rgba(60,60,50,0.06);
+    transition: all 0.3s ease;
 }
 
 .metric-card:hover {
@@ -868,1750 +569,1112 @@ div[data-testid="stNumberInput"] input:focus {
 }
 
 .metric-icon {
-    font-size: 1.3rem;
+    font-size: 25px;
 }
 
 .metric-label {
-    margin-top: 0.65rem;
-
-    color: var(--ink-soft);
-
-    font-size: 0.72rem;
-
-    font-weight: 700;
-
-    letter-spacing: 0.09em;
-
+    font-size: 11px;
+    color: var(--muted);
     text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 12px;
 }
 
 .metric-value {
-    margin-top: 0.25rem;
-
     font-family: "Playfair Display", serif;
-
+    font-size: 31px;
     color: var(--ink);
-
-    font-size: 1.7rem;
+    margin-top: 4px;
 }
 
 
-/* =========================================================
-   BODY TYPE
-   ========================================================= */
-
-.type-card {
-    min-height: 285px;
-
-    padding: 2rem;
-
-    border-radius: 30px;
-
-    background:
-        rgba(255,255,255,0.80);
-
-    border:
-        1px solid rgba(41,51,46,0.08);
-
-    box-shadow:
-        0 15px 38px rgba(41,51,46,0.055);
-
-    transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease;
-}
-
-.type-card:hover {
-    transform: translateY(-8px);
-
-    box-shadow:
-        0 25px 55px rgba(41,51,46,0.10);
-}
-
-.type-icon {
-    font-size: 2rem;
-}
-
-.type-card h3 {
-    font-family: "Playfair Display", serif;
-
-    color: var(--ink);
-
-    font-size: 1.65rem;
-}
-
-.type-subtitle {
-    color: #A57A59;
-
-    font-size: 0.72rem;
-
-    font-weight: 700;
-
-    letter-spacing: 0.10em;
-
-    text-transform: uppercase;
-}
-
-.type-card p {
-    color: var(--ink-soft);
-
-    line-height: 1.7;
-}
-
-
-/* =========================================================
-   RESULT
-   ========================================================= */
+/* ============================================================
+   RESULT CARD
+   ============================================================ */
 
 .result-card {
-    position: relative;
-
-    overflow: hidden;
-
-    text-align: center;
-
-    margin-top: 2rem;
-
-    padding: 3.2rem;
-
-    border-radius: 36px;
-
     background:
         linear-gradient(
             135deg,
-            rgba(221,230,215,0.72),
-            rgba(245,222,208,0.60)
+            rgba(232,239,228,0.92),
+            rgba(247,227,217,0.75)
         );
-
-    border: 1px solid rgba(41,51,46,0.07);
-
-    box-shadow:
-        0 22px 60px rgba(41,51,46,0.08);
+    border: 1px solid rgba(184,201,179,0.7);
+    border-radius: 32px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    animation: fadeUp 0.7s ease both;
 }
 
-.result-card::after {
-    content: "";
-
-    position: absolute;
-
-    width: 250px;
-    height: 250px;
-
-    border-radius: 50%;
-
-    right: -100px;
-    top: -100px;
-
-    background: rgba(255,255,255,0.35);
-}
-
-.result-card h2 {
-    position: relative;
-    z-index: 2;
-
+.result-type {
     font-family: "Playfair Display", serif;
+    font-size: 44px;
+    color: var(--sage-dark);
+}
 
-    font-size: 3rem;
-
-    color: var(--ink);
+.result-small {
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 650px;
+    margin: auto;
 }
 
 
-/* =========================================================
+/* ============================================================
    CHALLENGE
-   ========================================================= */
-
-.challenge-shell {
-    max-width: 900px;
-
-    margin: 2rem auto;
-
-    animation: fadeUp 0.6s ease;
-}
+   ============================================================ */
 
 .challenge-card {
-    position: relative;
-
-    overflow: hidden;
-
-    text-align: center;
-
-    padding: 3.5rem 2.5rem;
-
-    border-radius: 38px;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,0.90),
-            rgba(249,239,228,0.78)
-        );
-
-    border: 1px solid rgba(41,51,46,0.08);
-
-    box-shadow:
-        0 25px 75px rgba(41,51,46,0.10);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 32px;
+    padding: 42px;
+    box-shadow: var(--shadow);
+    animation: fadeUp 0.7s ease both;
 }
 
 .challenge-number {
-    color: #A57A59;
-
-    font-size: 0.72rem;
-
+    font-size: 11px;
     font-weight: 700;
-
+    color: var(--gold);
     letter-spacing: 0.16em;
-
-    text-transform: uppercase;
 }
 
-.challenge-icon {
-    width: 85px;
-    height: 85px;
-
-    margin: 0 auto 1.2rem;
-
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background:
-        linear-gradient(
-            145deg,
-            #EED4C4,
-            #E4EBD9
-        );
-
-    font-size: 2rem;
-
-    animation: floating 4s ease-in-out infinite;
-}
-
-.challenge-card h2 {
+.challenge-title {
     font-family: "Playfair Display", serif;
-
-    color: var(--ink);
-
-    font-size: 2.7rem;
+    font-size: 43px;
+    margin: 12px 0;
 }
 
-.challenge-task {
-    max-width: 620px;
-
-    margin: 1rem auto;
-
-    color: var(--ink-soft);
-
+.challenge-description {
+    font-size: 17px;
     line-height: 1.8;
+    color: var(--muted);
+}
 
-    font-size: 1rem;
+.challenge-purpose {
+    margin-top: 25px;
+    background: var(--paper-soft);
+    border-radius: 18px;
+    padding: 20px;
+    color: var(--ink);
 }
 
 
-/* =========================================================
-   REWARD REVEAL
-   ========================================================= */
+/* ============================================================
+   REWARD
+   ============================================================ */
 
 .reward-card {
-    text-align: center;
-
-    padding: 2.2rem;
-
-    margin-top: 1.5rem;
-
-    border-radius: 30px;
-
     background:
-        linear-gradient(
-            135deg,
-            #F7EBD7,
-            #E5ECDD
-        );
-
-    border: 1px solid rgba(201,166,107,0.25);
-
-    animation: fadeUp 0.6s ease;
+        radial-gradient(
+            circle at top right,
+            rgba(197,164,109,0.30),
+            transparent 35%
+        ),
+        white;
+    border: 1px solid var(--gold-light);
+    border-radius: 30px;
+    padding: 42px;
+    text-align: center;
+    box-shadow: 0 20px 55px rgba(120,95,50,0.12);
+    animation: fadeUp 0.7s ease both;
 }
 
 .badge {
     display: inline-flex;
-
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
     align-items: center;
     justify-content: center;
-
-    width: 92px;
-    height: 92px;
-
-    border-radius: 50%;
-
-    background: #FFFFFF;
-
-    border: 3px solid var(--gold);
-
-    font-size: 2.2rem;
-
-    box-shadow:
-        0 12px 35px rgba(201,166,107,0.18);
+    background: var(--gold-light);
+    font-size: 36px;
+    margin-bottom: 18px;
+    animation: pulseSoft 2.5s infinite;
 }
 
-.reward-card h3 {
+.reward-title {
     font-family: "Playfair Display", serif;
-
-    color: var(--ink);
-
-    font-size: 1.7rem;
+    font-size: 34px;
 }
 
-
-/* =========================================================
-   STREAK
-   ========================================================= */
-
-.streak-hero {
-    text-align: center;
-
-    padding: 3rem;
-
-    border-radius: 36px;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(221,230,215,0.72),
-            rgba(255,255,255,0.75)
-        );
-
-    border: 1px solid rgba(41,51,46,0.07);
-
-    box-shadow:
-        0 20px 60px rgba(41,51,46,0.07);
-}
-
-.streak-number {
-    font-family: "Playfair Display", serif;
-
-    font-size: 5rem;
-
-    color: var(--ink);
-
-    line-height: 1;
-}
-
-.streak-word {
-    color: #A57A59;
-
-    text-transform: uppercase;
-
-    font-size: 0.75rem;
-
+.reward-xp {
+    font-size: 18px;
+    color: var(--gold);
     font-weight: 700;
-
-    letter-spacing: 0.18em;
-}
-
-.day-box {
-    text-align: center;
-
-    padding: 1rem 0.4rem;
-
-    border-radius: 19px;
-
-    border: 1px solid rgba(41,51,46,0.08);
-
-    background: rgba(255,255,255,0.72);
-
-    transition: transform 0.25s ease;
-}
-
-.day-box:hover {
-    transform: translateY(-4px);
-}
-
-.day-active {
-    background:
-        linear-gradient(
-            145deg,
-            #879A7C,
-            #AAB99F
-        );
-
-    color: white;
-
-    border: none;
-}
-
-.day-letter {
-    font-size: 0.72rem;
-
-    font-weight: 700;
+    margin-top: 8px;
 }
 
 
-/* =========================================================
+/* ============================================================
    BADGES
-   ========================================================= */
+   ============================================================ */
 
-.badges-title {
-    font-family: "Playfair Display", serif;
-
-    color: var(--ink);
-
-    font-size: 2rem;
-}
-
-.badge-small {
-    text-align: center;
-
-    padding: 1.3rem 0.7rem;
-
+.badge-card {
+    background: white;
+    border: 1px solid var(--border);
     border-radius: 22px;
-
-    background: rgba(255,255,255,0.75);
-
-    border: 1px solid rgba(41,51,46,0.08);
-
-    min-height: 145px;
+    padding: 24px;
+    text-align: center;
+    min-height: 160px;
+    transition: all 0.3s ease;
 }
 
-.badge-small-icon {
-    font-size: 2rem;
+.badge-card:hover {
+    transform: translateY(-5px);
 }
 
-.badge-small-name {
-    margin-top: 0.6rem;
+.badge-icon {
+    font-size: 35px;
+    margin-bottom: 10px;
+}
 
-    color: var(--ink);
-
-    font-size: 0.82rem;
-
+.badge-name {
     font-weight: 700;
 }
 
-.badge-locked {
-    opacity: 0.35;
-    filter: grayscale(1);
+.badge-muted {
+    color: var(--muted);
+    font-size: 12px;
 }
 
 
-/* =========================================================
-   RECOMMENDATIONS
-   ========================================================= */
-
-.recommendation {
-    padding: 1.8rem;
-
-    margin-bottom: 1rem;
-
-    border-radius: 26px;
-
-    background:
-        rgba(255,255,255,0.78);
-
-    border: 1px solid rgba(41,51,46,0.08);
-
-    box-shadow:
-        0 10px 28px rgba(41,51,46,0.045);
-
-    transition: transform 0.25s ease;
-}
-
-.recommendation:hover {
-    transform: translateX(5px);
-}
-
-.recommendation-icon {
-    font-size: 1.6rem;
-}
-
-.recommendation h3 {
-    font-family: "Playfair Display", serif;
-
-    color: var(--ink);
-
-    font-size: 1.35rem;
-}
-
-.recommendation p {
-    color: var(--ink-soft);
-
-    line-height: 1.7;
-}
-
-
-/* =========================================================
-   EMPTY STATES
-   ========================================================= */
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
 
 .empty-state {
-    max-width: 850px;
-
-    margin: 4rem auto;
-
-    padding: 4rem 2rem;
-
     text-align: center;
-
-    border-radius: 38px;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(255,255,255,0.82),
-            rgba(244,239,229,0.72)
-        );
-
-    border: 1px dashed rgba(101,116,93,0.22);
-
-    box-shadow:
-        0 18px 50px rgba(41,51,46,0.06);
-
-    animation: fadeUp 0.7s ease;
+    background: rgba(255,255,255,0.7);
+    border: 1px dashed #D9D1C4;
+    border-radius: 32px;
+    padding: 70px 35px;
+    animation: fadeUp 0.7s ease both;
 }
 
-.empty-icon {
-    font-size: 3rem;
-
-    animation: floating 4s ease-in-out infinite;
+.empty-symbol {
+    font-size: 48px;
+    margin-bottom: 20px;
+    animation: floatSlow 4s ease-in-out infinite;
 }
 
 .empty-state h2 {
     font-family: "Playfair Display", serif;
-
-    color: var(--ink);
-
-    font-size: 2.4rem;
+    font-size: 34px;
 }
 
 .empty-state p {
+    color: var(--muted);
     max-width: 560px;
-
-    margin: auto;
-
-    color: var(--ink-soft);
-
-    line-height: 1.8;
+    margin: 12px auto 25px;
+    line-height: 1.7;
 }
 
 
-/* =========================================================
+/* ============================================================
+   STREAK
+   ============================================================ */
+
+.streak-card {
+    background:
+        linear-gradient(
+            135deg,
+            #F7E3D9,
+            #F3E8D1
+        );
+    border-radius: 30px;
+    padding: 35px;
+    box-shadow: var(--shadow);
+}
+
+.streak-number {
+    font-family: "Playfair Display", serif;
+    font-size: 68px;
+    line-height: 1;
+}
+
+.day-pill {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px 8px;
+    text-align: center;
+}
+
+.day-pill.active {
+    background: var(--sage-light);
+    border-color: var(--sage);
+}
+
+.day-name {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.day-dot {
+    font-size: 20px;
+    margin-top: 7px;
+}
+
+
+/* ============================================================
    FOOTER
-   ========================================================= */
+   ============================================================ */
 
 .footer {
-    margin-top: 5rem;
-
-    padding-top: 2rem;
-
-    border-top:
-        1px solid rgba(41,51,46,0.08);
-
     text-align: center;
-
-    color: #7A837D;
-
-    font-size: 0.78rem;
-
-    line-height: 1.8;
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 900px) {
-
-    .hero {
-        padding: 3rem 2rem;
-        min-height: 650px;
-    }
-
-    .hero-visual {
-        opacity: 0.35;
-        right: 50%;
-        transform: translateX(50%);
-        top: 55%;
-    }
-
-    .hero h1 {
-        font-size: 4rem;
-    }
-
-    .question-card {
-        padding: 2rem 1.3rem;
-    }
-
-    .question-title {
-        font-size: 1.9rem;
-    }
+    margin-top: 80px;
+    padding: 30px 0;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.05em;
 }
 
 </style>
-
-<div class="motion-orb orb-1"></div>
-<div class="motion-orb orb-2"></div>
-<div class="motion-orb orb-3"></div>
 """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
-# =========================================================
-# QUESTION DATA
-# =========================================================
+# ============================================================
+# HELPERS
+# ============================================================
 
-questions = [
-
-    {
-        "section": "A little about you",
-        "q": "How old are you?",
-        "type": "number",
-        "key": "age",
-        "help": "This helps place your answers in the right wellness context.",
-        "unit": "years"
-    },
-
-    {
-        "section": "A little about you",
-        "q": "How would you like MYBIO to address you?",
-        "type": "choice",
-        "key": "sex",
-        "options": [
-            "Female",
-            "Male",
-            "Prefer not to say"
-        ]
-    },
-
-    {
-        "section": "A little about you",
-        "q": "How tall are you?",
-        "type": "number",
-        "key": "height",
-        "help": "Enter your height in centimetres.",
-        "unit": "cm"
-    },
-
-    {
-        "section": "A little about you",
-        "q": "What is your current weight?",
-        "type": "number",
-        "key": "weight",
-        "help": "An approximate value is perfectly fine.",
-        "unit": "kg"
-    },
-
-    {
-        "section": "What matters to you",
-        "q": "What would you most like to work towards?",
-        "type": "choice",
-        "key": "goal",
-        "options": [
-            "Feel lighter",
-            "Maintain my current state",
-            "Build fitness",
-            "Reduce body fat",
-            "Build strength",
-            "Improve overall wellbeing"
-        ]
-    },
-
-    {
-        "section": "Your everyday rhythm",
-        "q": "What does a normal day look like for movement?",
-        "type": "choice",
-        "key": "activity",
-        "options": [
-            "Mostly seated",
-            "Light movement",
-            "Regularly active",
-            "Highly active"
-        ]
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "Which description feels closest to your natural build?",
-        "type": "dosha",
-        "key": "build",
-        "options": {
-            "Vata": "Naturally light or lean, with a tendency to find gaining weight difficult.",
-            "Pitta": "Moderate build, with a tendency to maintain weight relatively easily.",
-            "Kapha": "Solid or fuller build, with a tendency to gain weight more easily."
-        }
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "How does your appetite usually behave?",
-        "type": "dosha",
-        "key": "appetite",
-        "options": {
-            "Vata": "It can change from day to day.",
-            "Pitta": "It is usually strong and fairly predictable.",
-            "Kapha": "It is generally moderate, and I can go longer between meals."
-        }
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "Which sounds closest to your digestion?",
-        "type": "dosha",
-        "key": "digestion",
-        "options": {
-            "Vata": "Sometimes irregular, with occasional bloating.",
-            "Pitta": "Usually strong, sometimes with acidity.",
-            "Kapha": "Generally slower, sometimes with a feeling of heaviness."
-        }
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "Which environment feels least comfortable?",
-        "type": "dosha",
-        "key": "weather",
-        "options": {
-            "Vata": "Cold and windy conditions.",
-            "Pitta": "Excessive heat.",
-            "Kapha": "Damp, heavy or very cold conditions."
-        }
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "How does your energy usually move through the day?",
-        "type": "dosha",
-        "key": "energy",
-        "options": {
-            "Vata": "Quick bursts of energy, but not always consistent.",
-            "Pitta": "Focused, driven and fairly strong.",
-            "Kapha": "Slower to begin, but steady once I get going."
-        }
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "What best describes your sleep?",
-        "type": "dosha",
-        "key": "sleep_natural",
-        "options": {
-            "Vata": "Light or sometimes irregular.",
-            "Pitta": "Moderate and generally sufficient.",
-            "Kapha": "Deep and longer, and waking can take effort."
-        }
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "Which temperament feels most familiar?",
-        "type": "dosha",
-        "key": "temperament",
-        "options": {
-            "Vata": "Creative, curious, energetic and sometimes restless.",
-            "Pitta": "Focused, ambitious and decisive.",
-            "Kapha": "Calm, patient, steady and relaxed."
-        }
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "How does your weight usually respond?",
-        "type": "dosha",
-        "key": "weight_response",
-        "options": {
-            "Vata": "I generally find gaining weight difficult.",
-            "Pitta": "My weight tends to change moderately.",
-            "Kapha": "I tend to gain weight relatively easily."
-        }
-    },
-
-    {
-        "section": "Your natural tendencies",
-        "q": "How structured is your daily routine?",
-        "type": "dosha",
-        "key": "routine",
-        "options": {
-            "Vata": "It can be quite unpredictable.",
-            "Pitta": "It is fairly organised.",
-            "Kapha": "It is regular, although I can sometimes be inactive."
-        }
-    },
-
-    {
-        "section": "Your wellness context",
-        "q": "Has a healthcare professional diagnosed you with any of these?",
-        "type": "choice",
-        "key": "condition",
-        "options": [
-            "None",
-            "Type 2 diabetes",
-            "PCOS",
-            "Hypothyroidism",
-            "Cushing's syndrome",
-            "Fatty liver",
-            "Another metabolic or endocrine condition"
-        ],
-        "help": "This is only considered as wellness and safety context."
-    },
-
-    {
-        "section": "Your wellness context",
-        "q": "Do you currently take medication that may influence weight or appetite?",
-        "type": "choice",
-        "key": "medication",
-        "options": [
-            "No",
-            "Yes"
-        ],
-        "help": "Medication-related decisions should always involve a healthcare professional."
-    },
-
-    {
-        "section": "Your nourishment",
-        "q": "Which eating pattern best represents you?",
-        "type": "choice",
-        "key": "diet",
-        "options": [
-            "Vegetarian",
-            "Non-vegetarian",
-            "Eggetarian"
-        ]
-    },
-
-    {
-        "section": "Your nourishment",
-        "q": "How many meals do you usually have?",
-        "type": "choice",
-        "key": "meals",
-        "options": [
-            "1",
-            "2",
-            "3",
-            "4 or more"
-        ]
-    },
-
-    {
-        "section": "Your nourishment",
-        "q": "How often does processed or fast food enter your week?",
-        "type": "choice",
-        "key": "junk",
-        "options": [
-            "Rarely",
-            "Once or twice",
-            "Several times",
-            "Almost every day"
-        ]
-    },
-
-    {
-        "section": "Your nourishment",
-        "q": "How often do you have sugary drinks?",
-        "type": "choice",
-        "key": "sugar",
-        "options": [
-            "Rarely",
-            "Sometimes",
-            "Frequently",
-            "Daily"
-        ]
-    },
-
-    {
-        "section": "Your daily rhythm",
-        "q": "How much sleep do you usually get?",
-        "type": "choice",
-        "key": "sleep",
-        "options": [
-            "Less than 5 hours",
-            "5–7 hours",
-            "7–9 hours",
-            "More than 9 hours"
-        ]
-    },
-
-    {
-        "section": "Your daily rhythm",
-        "q": "How would you describe your current stress?",
-        "type": "choice",
-        "key": "stress",
-        "options": [
-            "Low",
-            "Moderate",
-            "High"
-        ]
-    },
-
-    {
-        "section": "Your daily rhythm",
-        "q": "How much intentional movement do you usually get?",
-        "type": "number",
-        "key": "activity_minutes",
-        "help": "Approximate minutes per day are enough.",
-        "unit": "minutes"
-    },
-
-    {
-        "section": "Your daily rhythm",
-        "q": "How much of your day is spent sitting or looking at screens?",
-        "type": "choice",
-        "key": "screen",
-        "options": [
-            "Less than 2 hours",
-            "2–6 hours",
-            "6–8 hours",
-            "More than 8 hours"
-        ]
-    },
-
-    {
-        "section": "Your daily rhythm",
-        "q": "How predictable are your meal timings?",
-        "type": "choice",
-        "key": "meal_timing",
-        "options": [
-            "Very regular",
-            "Mostly regular",
-            "Sometimes irregular",
-            "Very irregular"
-        ]
-    }
-]
-
-
-# =========================================================
-# CHALLENGE DATA
-# =========================================================
-
-challenges_data = [
-
-    {
-        "title": "The Hydration Pause",
-        "icon": "💧",
-        "task": "Take a quiet pause and have one full glass of water. No rush. Just notice the moment.",
-        "reward": "Hydration Hero",
-        "badge": "💧",
-        "xp": 20
-    },
-
-    {
-        "title": "The Movement Minute",
-        "icon": "🌿",
-        "task": "Give yourself ten minutes of movement today — a walk, a stretch or anything that gets you moving.",
-        "reward": "Move With Intention",
-        "badge": "🌿",
-        "xp": 25
-    },
-
-    {
-        "title": "The Mindful Plate",
-        "icon": "🥣",
-        "task": "During one meal today, slow down for a moment and notice your hunger, your food and how you feel while eating.",
-        "reward": "Mindful Nourisher",
-        "badge": "🥣",
-        "xp": 25
-    },
-
-    {
-        "title": "The Evening Reset",
-        "icon": "🌙",
-        "task": "Give your mind twenty screen-free minutes before bedtime and let the day become a little quieter.",
-        "reward": "Evening Guardian",
-        "badge": "🌙",
-        "xp": 30
-    }
-]
-
-
-# =========================================================
-# HELPER FUNCTIONS
-# =========================================================
-
-def navigate(page):
+def go_to(page):
     st.session_state.page = page
     st.rerun()
+
+
+def bmi_value():
+    height = st.session_state.answers.get("height", 0)
+    weight = st.session_state.answers.get("weight", 0)
+
+    if height and weight and height > 0:
+        height_m = height / 100
+        return round(weight / (height_m ** 2), 1)
+
+    return None
 
 
 def calculate_type():
     scores = {
         "Vata": st.session_state.vata,
         "Pitta": st.session_state.pitta,
-        "Kapha": st.session_state.kapha
+        "Kapha": st.session_state.kapha,
     }
 
-    ordered = sorted(
-        scores.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
+    ordered = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
-    if ordered[0][1] == ordered[1][1] == ordered[2][1]:
+    first = ordered[0]
+    second = ordered[1]
+
+    if first[1] == 0:
         return "Balanced"
 
-    if ordered[0][1] == ordered[1][1]:
-        return f"{ordered[0][0]}–{ordered[1][0]}"
+    difference = first[1] - second[1]
 
-    return ordered[0][0]
+    if difference <= 1:
+        return f"{first[0]}–{second[0]}"
+
+    return first[0]
 
 
-def finish_questionnaire():
-
+def calculate_dosha_scores():
     answers = st.session_state.answers
 
-    st.session_state.vata = 0
-    st.session_state.pitta = 0
-    st.session_state.kapha = 0
+    vata = 0
+    pitta = 0
+    kapha = 0
 
-    dosha_keys = [
-        "build",
-        "appetite",
-        "digestion",
-        "weather",
-        "energy",
-        "sleep_natural",
-        "temperament",
-        "weight_response",
-        "routine"
-    ]
+    mappings = {
+        "build": {
+            "Lean / light": ("vata",),
+            "Medium / athletic": ("pitta",),
+            "Broad / solid": ("kapha",),
+        },
+        "appetite": {
+            "Irregular": ("vata",),
+            "Strong and regular": ("pitta",),
+            "Steady and moderate": ("kapha",),
+        },
+        "digestion": {
+            "Variable": ("vata",),
+            "Fast": ("pitta",),
+            "Slow and steady": ("kapha",),
+        },
+        "weather": {
+            "I prefer warmth": ("vata",),
+            "I prefer cool surroundings": ("pitta",),
+            "I prefer mild weather": ("kapha",),
+        },
+        "energy": {
+            "Comes in bursts": ("vata",),
+            "High and focused": ("pitta",),
+            "Calm and sustained": ("kapha",),
+        },
+        "sleep_natural": {
+            "Light / easily disturbed": ("vata",),
+            "Moderate": ("pitta",),
+            "Deep / long": ("kapha",),
+        },
+        "temperament": {
+            "Creative and spontaneous": ("vata",),
+            "Driven and decisive": ("pitta",),
+            "Patient and calm": ("kapha",),
+        },
+        "weight_response": {
+            "Difficult to gain": ("vata",),
+            "Changes relatively easily": ("pitta",),
+            "Easy to gain": ("kapha",),
+        },
+        "routine": {
+            "I prefer flexibility": ("vata",),
+            "I like structure": ("pitta",),
+            "I enjoy consistency": ("kapha",),
+        },
+    }
 
-    for key in dosha_keys:
-
+    for key, options in mappings.items():
         value = answers.get(key)
 
-        if value == "Vata":
-            st.session_state.vata += 1
+        if value in options:
+            dosha = options[value][0]
 
-        elif value == "Pitta":
-            st.session_state.pitta += 1
+            if dosha == "vata":
+                vata += 1
+            elif dosha == "pitta":
+                pitta += 1
+            elif dosha == "kapha":
+                kapha += 1
 
-        elif value == "Kapha":
-            st.session_state.kapha += 1
-
+    st.session_state.vata = vata
+    st.session_state.pitta = pitta
+    st.session_state.kapha = kapha
     st.session_state.ayurvedic_type = calculate_type()
 
+
+def complete_profile():
+    calculate_dosha_scores()
+
     st.session_state.profile_complete = True
+    st.session_state.journey_started = True
 
-    st.session_state.question_index = 0
+    if st.session_state.xp < 100:
+        st.session_state.xp = 100
 
-    st.session_state.streak = 1
+    if st.session_state.streak == 0:
+        st.session_state.streak = 1
 
-    st.session_state.xp = 100
-
-    navigate("Body")
-
-
-def bmi_value():
-
-    height = st.session_state.answers.get("height")
-    weight = st.session_state.answers.get("weight")
-
-    if height and weight and height > 0:
-
-        return weight / ((height / 100) ** 2)
-
-    return None
+    go_to("Ayurvedic Body Type")
 
 
-def completed_badges():
+# ============================================================
+# QUESTIONNAIRE
+# ============================================================
 
-    completed = st.session_state.completed_challenges
+QUESTIONS = [
+    {
+        "key": "age",
+        "section": "Your foundation",
+        "question": "Let's begin with the basics.",
+        "description": "A few simple details help shape a more relevant wellness journey.",
+        "type": "number",
+        "label": "Age",
+        "min": 13,
+        "max": 100,
+        "default": 20,
+        "unit": "years",
+    },
+    {
+        "key": "sex",
+        "section": "Your foundation",
+        "question": "How would you like your profile tailored?",
+        "description": "Choose the option that feels most comfortable.",
+        "type": "choice",
+        "options": [
+            "Female",
+            "Male",
+            "Prefer not to say",
+        ],
+    },
+    {
+        "key": "height",
+        "section": "Your foundation",
+        "question": "How tall are you?",
+        "description": "An approximate value is completely fine.",
+        "type": "number",
+        "label": "Height",
+        "min": 100,
+        "max": 230,
+        "default": 165,
+        "unit": "cm",
+    },
+    {
+        "key": "weight",
+        "section": "Your foundation",
+        "question": "What is your approximate weight?",
+        "description": "Use your current approximate weight.",
+        "type": "number",
+        "label": "Weight",
+        "min": 25,
+        "max": 250,
+        "default": 60,
+        "unit": "kg",
+    },
+    {
+        "key": "goal",
+        "section": "Your intention",
+        "question": "What would you most like to improve?",
+        "description": "Choose the direction that matters most to you right now.",
+        "type": "choice",
+        "options": [
+            "Energy and vitality",
+            "Better sleep",
+            "Movement and fitness",
+            "Nutrition and eating habits",
+            "Stress and calm",
+            "Overall balance",
+        ],
+    },
+    {
+        "key": "activity",
+        "section": "Your intention",
+        "question": "How active is your usual day?",
+        "description": "Think about an ordinary week rather than your best week.",
+        "type": "choice",
+        "options": [
+            "Mostly seated",
+            "Lightly active",
+            "Moderately active",
+            "Very active",
+        ],
+    },
+    {
+        "key": "build",
+        "section": "Your natural tendencies",
+        "question": "Which description feels closest to your natural build?",
+        "description": "There is no right or wrong answer.",
+        "type": "choice",
+        "options": [
+            "Lean / light",
+            "Medium / athletic",
+            "Broad / solid",
+        ],
+    },
+    {
+        "key": "appetite",
+        "section": "Your natural tendencies",
+        "question": "How does your appetite usually behave?",
+        "description": "Think about your normal pattern.",
+        "type": "choice",
+        "options": [
+            "Irregular",
+            "Strong and regular",
+            "Steady and moderate",
+        ],
+    },
+    {
+        "key": "digestion",
+        "section": "Your natural tendencies",
+        "question": "How would you describe your digestion?",
+        "description": "Choose the pattern that sounds most familiar.",
+        "type": "choice",
+        "options": [
+            "Variable",
+            "Fast",
+            "Slow and steady",
+        ],
+    },
+    {
+        "key": "weather",
+        "section": "Your natural tendencies",
+        "question": "Which surroundings usually feel most comfortable?",
+        "description": "Notice what your body naturally prefers.",
+        "type": "choice",
+        "options": [
+            "I prefer warmth",
+            "I prefer cool surroundings",
+            "I prefer mild weather",
+        ],
+    },
+    {
+        "key": "energy",
+        "section": "Your natural tendencies",
+        "question": "How does your energy tend to move through the day?",
+        "description": "Think about your natural rhythm.",
+        "type": "choice",
+        "options": [
+            "Comes in bursts",
+            "High and focused",
+            "Calm and sustained",
+        ],
+    },
+    {
+        "key": "sleep_natural",
+        "section": "Your natural tendencies",
+        "question": "What is your natural sleep pattern?",
+        "description": "Before considering your current schedule, think about what feels natural.",
+        "type": "choice",
+        "options": [
+            "Light / easily disturbed",
+            "Moderate",
+            "Deep / long",
+        ],
+    },
+    {
+        "key": "temperament",
+        "section": "Your natural tendencies",
+        "question": "Which temperament sounds most like you?",
+        "description": "Pick the description you identify with most.",
+        "type": "choice",
+        "options": [
+            "Creative and spontaneous",
+            "Driven and decisive",
+            "Patient and calm",
+        ],
+    },
+    {
+        "key": "weight_response",
+        "section": "Your natural tendencies",
+        "question": "How does your weight tend to respond to changes in routine?",
+        "description": "Choose the closest pattern.",
+        "type": "choice",
+        "options": [
+            "Difficult to gain",
+            "Changes relatively easily",
+            "Easy to gain",
+        ],
+    },
+    {
+        "key": "routine",
+        "section": "Your natural tendencies",
+        "question": "What kind of routine feels most natural?",
+        "description": "Your answer helps us understand your preferred rhythm.",
+        "type": "choice",
+        "options": [
+            "I prefer flexibility",
+            "I like structure",
+            "I enjoy consistency",
+        ],
+    },
+    {
+        "key": "condition",
+        "section": "Your health context",
+        "question": "Is there anything about your health you want to keep in mind?",
+        "description": "This is optional and is used only to make suggestions more mindful.",
+        "type": "choice",
+        "options": [
+            "Nothing specific",
+            "A long-term health concern",
+            "Something I am currently monitoring",
+            "Prefer not to say",
+        ],
+    },
+    {
+        "key": "medication",
+        "section": "Your health context",
+        "question": "Are you currently taking regular medication?",
+        "description": "This is optional.",
+        "type": "choice",
+        "options": [
+            "No",
+            "Yes",
+            "Prefer not to say",
+        ],
+    },
+    {
+        "key": "allergy",
+        "section": "Your health context",
+        "question": "Do you have any known food allergies or sensitivities?",
+        "description": "Choose the closest option.",
+        "type": "choice",
+        "options": [
+            "No known allergies",
+            "Yes",
+            "Not sure",
+            "Prefer not to say",
+        ],
+    },
+    {
+        "key": "other_health",
+        "section": "Your health context",
+        "question": "Is there anything else you'd like to keep in mind?",
+        "description": "You can keep this simple.",
+        "type": "choice",
+        "options": [
+            "Nothing else",
+            "Recovery / rest",
+            "Digestive comfort",
+            "Stress management",
+            "Prefer not to say",
+        ],
+    },
+    {
+        "key": "diet",
+        "section": "Your nourishment",
+        "question": "How would you describe your usual food pattern?",
+        "description": "Choose what best represents most of your meals.",
+        "type": "choice",
+        "options": [
+            "Mostly vegetarian",
+            "Vegetarian with occasional exceptions",
+            "Mixed diet",
+            "Prefer not to say",
+        ],
+    },
+    {
+        "key": "meals",
+        "section": "Your nourishment",
+        "question": "How regular are your meals?",
+        "description": "Think about your normal weekdays.",
+        "type": "choice",
+        "options": [
+            "Very irregular",
+            "Somewhat irregular",
+            "Mostly regular",
+            "Very regular",
+        ],
+    },
+    {
+        "key": "junk",
+        "section": "Your nourishment",
+        "question": "How often do convenience foods enter your routine?",
+        "description": "Be honest — this is about understanding your rhythm, not judging it.",
+        "type": "choice",
+        "options": [
+            "Rarely",
+            "Sometimes",
+            "Often",
+            "Very often",
+        ],
+    },
+    {
+        "key": "sugar",
+        "section": "Your nourishment",
+        "question": "How often do you reach for sweet foods or drinks?",
+        "description": "Choose your usual pattern.",
+        "type": "choice",
+        "options": [
+            "Rarely",
+            "Sometimes",
+            "Often",
+            "Daily",
+        ],
+    },
+    {
+        "key": "sleep",
+        "section": "Your daily rhythm",
+        "question": "How much sleep do you usually get?",
+        "description": "An approximate number is enough.",
+        "type": "number",
+        "label": "Sleep",
+        "min": 2,
+        "max": 14,
+        "default": 7,
+        "unit": "hours",
+    },
+    {
+        "key": "stress",
+        "section": "Your daily rhythm",
+        "question": "How would you describe your current stress level?",
+        "description": "Think about the past couple of weeks.",
+        "type": "choice",
+        "options": [
+            "Low",
+            "Occasional",
+            "Moderate",
+            "High",
+        ],
+    },
+    {
+        "key": "activity_minutes",
+        "section": "Your daily rhythm",
+        "question": "How much intentional movement do you usually get?",
+        "description": "Walking, exercise, yoga, sport — anything counts.",
+        "type": "number",
+        "label": "Movement",
+        "min": 0,
+        "max": 300,
+        "default": 30,
+        "unit": "min/day",
+    },
+    {
+        "key": "screen",
+        "section": "Your daily rhythm",
+        "question": "How much of your day is spent looking at screens?",
+        "description": "Include study, work, entertainment and social media.",
+        "type": "choice",
+        "options": [
+            "Less than 3 hours",
+            "3–5 hours",
+            "5–8 hours",
+            "More than 8 hours",
+        ],
+    },
+    {
+        "key": "meal_timing",
+        "section": "Your daily rhythm",
+        "question": "How predictable are your meal timings?",
+        "description": "Consistency can tell us a lot about your everyday rhythm.",
+        "type": "choice",
+        "options": [
+            "Very unpredictable",
+            "Somewhat unpredictable",
+            "Mostly predictable",
+            "Very predictable",
+        ],
+    },
+]
 
-    return [
-        challenges_data[i]
-        for i in completed
-        if i < len(challenges_data)
-    ]
 
+# ============================================================
+# NAVIGATION
+# ============================================================
 
-# =========================================================
-# BRAND HEADER
-# =========================================================
+PAGES = [
+    "Home",
+    "Begin Journey",
+    "My Wellness",
+    "Ayurvedic Body Type",
+    "Today's Challenge",
+    "My Rhythm",
+    "For You",
+    "About",
+]
 
 st.markdown(
     """
-<div class="brand-row">
-
+<div class="brand">
+    <div class="brand-symbol">✦</div>
     <div>
-        <div class="brand">MY<span>BIO</span></div>
-
-        <div class="brand-caption">
-            Your personal wellness journey
-        </div>
+        <div class="brand-name">MYBIO</div>
+        <div class="brand-sub">YOUR RHYTHM · YOUR JOURNEY</div>
     </div>
-
 </div>
 """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
+st.markdown('<div class="nav-wrap">', unsafe_allow_html=True)
 
-# =========================================================
-# NAVIGATION
-# =========================================================
+nav_cols = st.columns(len(PAGES))
 
-nav_items = [
-    ("Home", "Home"),
-    ("Begin Journey", "Questionnaire"),
-    ("My Wellness", "Body"),
-    ("Body Type", "Ayurvedic"),
-    ("Today's Challenge", "Challenges"),
-    ("My Rhythm", "Streak"),
-    ("For You", "Recommendations"),
-    ("About", "About")
-]
-
-nav_cols = st.columns(len(nav_items))
-
-for col, (label, page) in zip(nav_cols, nav_items):
-
-    with col:
-
+for i, page in enumerate(PAGES):
+    with nav_cols[i]:
         if st.button(
-            label,
+            page,
             key=f"nav_{page}",
-            use_container_width=True
+            type="primary" if st.session_state.page == page else "secondary",
+            use_container_width=True,
         ):
-            navigate(page)
+            go_to(page)
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-
-# =========================================================
+# ============================================================
 # HOME
-# =========================================================
+# ============================================================
 
-def home():
+def home_page():
 
     st.markdown(
         """
 <div class="hero">
-
     <div class="hero-content">
-
-        <div class="eyebrow">
-            ✦ A different way to know yourself
-        </div>
+        <div class="eyebrow">A MORE INTENTIONAL WAY TO KNOW YOURSELF</div>
 
         <h1>
-            Meet the<br>
-            <em>you</em> within.
+            Meet the <span>you</span><br>
+            within.
         </h1>
 
-        <div class="hero-subtitle">
-            Ancient wisdom. Modern you. Infinite possibilities.
-        </div>
-
-        <p class="hero-description">
-            MYBIO is a space to pause, reflect and understand the
-            patterns that make your everyday life uniquely yours.
-            Discover your wellness story, explore an Ayurvedic
-            perspective and take small steps that feel right for you.
+        <p>
+            MYBIO brings together timeless wellness wisdom and the rhythm
+            of modern life to help you understand your patterns,
+            build mindful habits and discover small changes that feel
+            naturally yours.
         </p>
 
-    </div>
-
-
-    <div class="hero-visual">
-
-        <div class="orbit"></div>
-
-        <div class="hero-core">
-            MYBIO
+        <div class="tagline">
+            ANCIENT WISDOM · MODERN YOU · INFINITE POSSIBILITIES
         </div>
-
     </div>
 
+    <div class="orbit"></div>
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
+
+    st.write("")
+
+    if st.button(
+        "Begin your journey  →",
+        type="primary",
+        use_container_width=False,
+        key="home_begin",
+    ):
+        st.session_state.journey_started = True
+        go_to("Begin Journey")
+
+    st.write("")
+    st.write("")
 
     st.markdown(
         """
-<div class="tagline">
-
-    ANCIENT WISDOM
-    <span>✦</span>
-    MODERN YOU
-    <span>✦</span>
-    INFINITE POSSIBILITIES
-
+<div class="section-label">THE MYBIO APPROACH</div>
+<div class="section-title">Not another wellness checklist.</div>
+<div class="section-description">
+A gentler way to understand your everyday patterns and turn awareness
+into small, meaningful actions.
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-
-    st.markdown(
-        """
-<div style="text-align:center;">
-
-    <div class="section-label">
-        YOUR STORY STARTS HERE
-    </div>
-
-    <div class="section-title">
-        Wellness should feel personal.
-    </div>
-
-    <p class="section-text" style="margin:auto;">
-        Not another list of things you should do.
-        Not another place telling you to be perfect.
-        Just a space to understand yourself a little better —
-        and begin from there.
-    </p>
-
-</div>
-""",
-        unsafe_allow_html=True
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
 
     cols = st.columns(3)
 
-    features = [
-
+    cards = [
         (
-            "01",
             "◌",
-            "Discover Yourself",
-            "Reflect on your everyday habits, energy, nourishment,
-            movement and natural tendencies."
+            "Understand your rhythm",
+            "Explore the patterns behind your energy, nourishment, movement, sleep and everyday habits.",
         ),
-
         (
-            "02",
             "✦",
-            "Find Your Balance",
-            "Explore your Ayurvedic Body Type through a simple,
-            visual and personal experience."
+            "Discover your balance",
+            "Explore your Ayurvedic body type through a simple, guided personal journey.",
         ),
-
         (
-            "03",
-            "∞",
-            "Grow Gently",
-            "Turn awareness into small actions that can actually
-            fit into your everyday life."
-        )
+            "⌁",
+            "Build small habits",
+            "Take one intentional step at a time instead of trying to change everything at once.",
+        ),
     ]
 
-    for col, (number, icon, title, text) in zip(cols, features):
-
+    for col, (icon, title, text) in zip(cols, cards):
         with col:
-
             st.markdown(
                 f"""
 <div class="feature-card">
-
-    <div class="feature-number">
-        {number}
-    </div>
-
-    <div class="feature-icon">
-        {icon}
-    </div>
-
-    <h3>
-        {title}
-    </h3>
-
-    <p>
-        {text}
-    </p>
-
+    <div class="feature-icon">{icon}</div>
+    <h3>{title}</h3>
+    <p>{text}</p>
 </div>
 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.write("")
+    st.write("")
 
     st.markdown(
         """
-<div class="journey-banner">
-
-    <div class="section-label">
-        ONE STEP IS ENOUGH
-    </div>
-
-    <div style="
-        font-family:'Playfair Display',serif;
-        font-size:1.5rem;
-        color:#29332E;
-        margin-top:0.3rem;">
-        You don't have to change your whole life today.
-        You only have to begin.
-    </div>
-
+<div class="empty-state">
+    <div class="empty-symbol">✧</div>
+    <h2>Your story starts with curiosity.</h2>
+    <p>
+        No perfect routine. No pressure to become someone else.
+        Just a little space to understand where you are today.
+    </p>
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    if st.session_state.profile_complete:
 
-        st.markdown(
-            '<div class="primary-btn">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            "Continue my journey  →",
-            key="home_continue",
-            use_container_width=True
-        ):
-            navigate("Body")
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    else:
-
-        st.markdown(
-            '<div class="primary-btn">',
-            unsafe_allow_html=True
-        )
-
-        if st.button(
-            "Begin your MYBIO journey  →",
-            key="home_begin",
-            use_container_width=True
-        ):
-            navigate("Questionnaire")
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
-# =========================================================
+# ============================================================
 # QUESTIONNAIRE
-# =========================================================
+# ============================================================
 
-def questionnaire():
+def journey_page():
 
+    total = len(QUESTIONS)
     index = st.session_state.question_index
 
-    total = len(questions)
+    if index >= total:
+        index = total - 1
+        st.session_state.question_index = index
 
-    question = questions[index]
-
-    progress = ((index) / total) * 100
+    q = QUESTIONS[index]
+    progress = int(((index + 1) / total) * 100)
 
     st.markdown(
         """
-<div class="question-header">
-
-    <div class="section-label">
-        YOUR MYBIO JOURNEY
-    </div>
-
-    <div class="section-title">
-        Let's start with you.
-    </div>
-
-    <p class="section-text" style="margin:auto;">
-        There are no perfect answers here.
-        Choose what feels most naturally true.
-    </p>
-
+<div class="section-label">YOUR JOURNEY</div>
+<div class="section-title">A few questions. A clearer picture.</div>
+<div class="section-description">
+There is no perfect answer. Choose what feels most true for you.
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     st.markdown(
         f"""
-<div class="progress-background">
+<div class="journey-shell">
 
-    <div class="progress-value"
-         style="width:{progress}%;"></div>
-
+<div class="step-number">
+    STEP {index + 1:02d} / {total:02d}
 </div>
 
-<div style="
-    text-align:right;
-    color:#7A837D;
-    font-size:0.75rem;
-    margin-bottom:1rem;">
-    {index + 1:02d} / {total:02d}
+<div class="progress-track">
+    <div class="progress-fill" style="width:{progress}%"></div>
 </div>
-""",
-        unsafe_allow_html=True
-    )
 
-    st.markdown(
-        '<div class="question-wrapper"><div class="question-card">',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        f"""
-<div class="question-count">
-    {question["section"]}
+<div style="font-size:11px; color:#C5A46D; font-weight:700; letter-spacing:.14em;">
+    {q["section"].upper()}
 </div>
 
 <div class="question-title">
-    {question["q"]}
+    {q["question"]}
 </div>
-""",
-        unsafe_allow_html=True
-    )
 
-    if question.get("help"):
-
-        st.markdown(
-            f"""
 <div class="question-help">
-    {question["help"]}
+    {q["description"]}
+</div>
+
 </div>
 """,
-            unsafe_allow_html=True
-        )
-
-    current = st.session_state.answers.get(
-        question["key"]
+        unsafe_allow_html=True,
     )
 
+    st.write("")
 
-    # -----------------------------------------------------
-    # NUMBER
-    # -----------------------------------------------------
+    current_value = st.session_state.answers.get(q["key"])
 
-    if question["type"] == "number":
+    if q["type"] == "number":
+
+        default_value = current_value if current_value is not None else q["default"]
 
         value = st.number_input(
-            question.get("unit", ""),
-            min_value=1.0,
-            max_value=250.0,
-            value=float(current) if current else 1.0,
-            step=1.0,
-            key=f"number_{question['key']}"
+            q["label"],
+            min_value=q["min"],
+            max_value=q["max"],
+            value=default_value,
+            step=1,
+            key=f"input_{q['key']}",
         )
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.session_state.answers[q["key"]] = value
 
-        st.markdown(
-            '<div class="primary-btn">',
-            unsafe_allow_html=True
-        )
+        st.caption(f"Unit: {q['unit']}")
 
-        if st.button(
-            "Continue  →",
-            key=f"continue_{question['key']}",
-            use_container_width=True
-        ):
+    elif q["type"] == "choice":
 
-            st.session_state.answers[
-                question["key"]
-            ] = value
+        options = q["options"]
 
-            if index < total - 1:
+        for option_index, option in enumerate(options):
 
-                st.session_state.question_index += 1
+            selected = current_value == option
 
+            if st.button(
+                ("✓  " if selected else "") + option,
+                key=f"answer_{q['key']}_{option_index}",
+                use_container_width=True,
+                type="primary" if selected else "secondary",
+            ):
+                st.session_state.answers[q["key"]] = option
                 st.rerun()
 
-            else:
+    st.write("")
+    st.write("")
 
-                finish_questionnaire()
+    selected = st.session_state.answers.get(q["key"])
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    nav_left, nav_middle, nav_right = st.columns([1, 2, 1])
 
+    with nav_left:
+        if index > 0:
+            if st.button(
+                "← Back",
+                key=f"back_{index}",
+                use_container_width=True,
+            ):
+                st.session_state.question_index -= 1
+                st.rerun()
 
-    # -----------------------------------------------------
-    # DOSHA / BODY TYPE
-    # -----------------------------------------------------
+    with nav_right:
 
-    elif question["type"] == "dosha":
-
-        options = list(
-            question["options"].items()
+        button_label = (
+            "Finish journey  →"
+            if index == total - 1
+            else "Continue  →"
         )
 
-        cols = st.columns(3)
-
-        for col, (name, description) in zip(
-            cols,
-            options
-        ):
-
-            with col:
-
-                selected = current == name
-
-                if selected:
-
-                    border = (
-                        "2px solid #C9A66B;"
-                        "background:#F8F1E6;"
-                    )
-
-                    button_text = "Chosen ✓"
-
-                else:
-
-                    border = (
-                        "1px solid rgba(41,51,46,0.09);"
-                    )
-
-                    button_text = "Choose this"
-
-                st.markdown(
-                    f"""
-<div style="
-    min-height:190px;
-    padding:1.5rem;
-    border-radius:24px;
-    border:{border};
-    box-shadow:0 8px 25px rgba(41,51,46,0.05);
-    margin-bottom:0.8rem;">
-
-    <div style="
-        font-family:'Playfair Display',serif;
-        color:#29332E;
-        font-size:1.4rem;
-        font-weight:600;">
-        {name}
-    </div>
-
-    <div style="
-        color:#56625B;
-        font-size:0.86rem;
-        line-height:1.6;
-        margin-top:0.6rem;">
-        {description}
-    </div>
-
-</div>
-""",
-                    unsafe_allow_html=True
-                )
-
-                if st.button(
-                    button_text,
-                    key=f"{question['key']}_{name}",
-                    use_container_width=True
-                ):
-
-                    st.session_state.answers[
-                        question["key"]
-                    ] = name
-
-                    st.rerun()
-
-        if current:
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            st.markdown(
-                '<div class="primary-btn">',
-                unsafe_allow_html=True
-            )
+        if selected is not None:
 
             if st.button(
-                "Continue  →",
-                key=f"next_{question['key']}",
-                use_container_width=True
+                button_label,
+                key=f"next_{index}",
+                type="primary",
+                use_container_width=True,
             ):
 
-                if index < total - 1:
-
+                if index == total - 1:
+                    complete_profile()
+                else:
                     st.session_state.question_index += 1
-
                     st.rerun()
 
-                else:
+    st.write("")
 
-                    finish_questionnaire()
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-
-    # -----------------------------------------------------
-    # NORMAL CHOICE
-    # -----------------------------------------------------
-
-    else:
-
-        options = question["options"]
-
-        for start in range(
-            0,
-            len(options),
-            2
-        ):
-
-            row = options[
-                start:start + 2
-            ]
-
-            cols = st.columns(2)
-
-            for col, option in zip(
-                cols,
-                row
-            ):
-
-                with col:
-
-                    selected = current == option
-
-                    if selected:
-
-                        st.markdown(
-                            f"""
+    if index >= total // 2 and index < total - 1:
+        st.markdown(
+            """
 <div style="
-    padding:1.15rem 1.3rem;
-    border-radius:20px;
-    background:#F8F1E6;
-    border:2px solid #C9A66B;
-    margin-bottom:0.4rem;">
-
-    <div class="choice-title">
-        {option}
-    </div>
-
-    <div style="
-        color:#A57A59;
-        font-size:0.72rem;
-        font-weight:700;
-        margin-top:0.25rem;">
-        SELECTED ✓
-    </div>
-
+    text-align:center;
+    color:#78817B;
+    font-size:12px;
+    padding:10px;
+">
+    ✦ You're halfway through. Keep going — your picture is beginning to take shape.
 </div>
 """,
-                            unsafe_allow_html=True
-                        )
-
-                    else:
-
-                        st.markdown(
-                            f"""
-<div style="
-    padding:1.15rem 1.3rem;
-    border-radius:20px;
-    background:rgba(255,255,255,0.65);
-    border:1px solid rgba(41,51,46,0.08);
-    margin-bottom:0.4rem;">
-
-    <div class="choice-title">
-        {option}
-    </div>
-
-</div>
-""",
-                            unsafe_allow_html=True
-                        )
-
-                    if st.button(
-                        "Selected ✓"
-                        if selected
-                        else "Choose",
-                        key=f"{question['key']}_{option}",
-                        use_container_width=True
-                    ):
-
-                        st.session_state.answers[
-                            question["key"]
-                        ] = option
-
-                        st.rerun()
-
-        if current:
-
-            st.markdown("<br>", unsafe_allow_html=True)
-
-            st.markdown(
-                '<div class="primary-btn">',
-                unsafe_allow_html=True
-            )
-
-            if st.button(
-                "Continue  →",
-                key=f"next_{question['key']}",
-                use_container_width=True
-            ):
-
-                if index < total - 1:
-
-                    st.session_state.question_index += 1
-
-                    st.rerun()
-
-                else:
-
-                    finish_questionnaire()
-
-            st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown(
-        "</div></div>",
-        unsafe_allow_html=True
-    )
-
-    if index > 0:
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        if st.button(
-            "← Go back",
-            key="previous_question"
-        ):
-
-            st.session_state.question_index -= 1
-
-            st.rerun()
+            unsafe_allow_html=True,
+        )
 
 
-# =========================================================
-# WELLNESS DASHBOARD
-# =========================================================
+# ============================================================
+# MY WELLNESS
+# ============================================================
 
-def body():
+def wellness_page():
 
     if not st.session_state.profile_complete:
 
         st.markdown(
             """
-<div class="empty-state">
-
-    <div class="empty-icon">
-        ✦
-    </div>
-
-    <div class="section-label">
-        YOUR SPACE IS WAITING
-    </div>
-
-    <h2>
-        Something beautiful begins with knowing yourself.
-    </h2>
-
-    <p>
-        Complete your first MYBIO journey and this space
-        will begin reflecting your personal wellness story.
-    </p>
-
-</div>
+<div class="section-label">MY WELLNESS</div>
+<div class="section-title">Your space is waiting.</div>
 """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
         st.markdown(
-            '<div class="primary-btn">',
-            unsafe_allow_html=True
+            """
+<div class="empty-state">
+    <div class="empty-symbol">◌</div>
+    <h2>Something meaningful is taking shape.</h2>
+    <p>
+        Complete your journey first. Your wellness space will gradually
+        become a reflection of your everyday rhythm.
+    </p>
+</div>
+""",
+            unsafe_allow_html=True,
         )
 
         if st.button(
-            "Begin my journey  →",
-            use_container_width=True
+            "Start discovering  →",
+            type="primary",
+            key="wellness_start",
         ):
-            navigate("Questionnaire")
-
-        st.markdown("</div>", unsafe_allow_html=True)
+            go_to("Begin Journey")
 
         return
 
@@ -2619,459 +1682,406 @@ def body():
 
     st.markdown(
         """
-<div class="section-label">
-    YOUR WELLNESS SPACE
+<div class="section-label">YOUR WELLNESS</div>
+<div class="section-title">A snapshot of you.</div>
+<div class="section-description">
+Small signals. Gentle awareness. A place to notice how your everyday choices connect.
 </div>
-
-<div class="section-title">
-    A picture of where you are.
-</div>
-
-<p class="section-text">
-    Your journey isn't about becoming someone else.
-    It is about noticing yourself — and choosing what
-    deserves your attention today.
-</p>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    metrics = [
-
-        (
-            "✦",
-            "Current rhythm",
-            f"{st.session_state.streak} day"
-        ),
-
-        (
-            "◌",
-            "Journey points",
-            f"{st.session_state.xp} XP"
-        ),
-
-        (
-            "☀",
-            "Ayurvedic Body Type",
-            st.session_state.ayurvedic_type
-        ),
-
-        (
-            "∞",
-            "BMI",
-            f"{bmi:.1f}" if bmi else "—"
-        )
-    ]
 
     cols = st.columns(4)
 
-    for col, (icon, label, value) in zip(
-        cols,
-        metrics
-    ):
+    metrics = [
+        ("✦", "Current streak", f"{st.session_state.streak} day"),
+        ("◇", "XP collected", str(st.session_state.xp)),
+        ("◌", "Body type", st.session_state.ayurvedic_type),
+        ("⌁", "BMI", str(bmi) if bmi else "—"),
+    ]
 
+    for col, (icon, label, value) in zip(cols, metrics):
         with col:
-
             st.markdown(
                 f"""
 <div class="metric-card">
-
-    <div class="metric-icon">
-        {icon}
-    </div>
-
-    <div class="metric-label">
-        {label}
-    </div>
-
-    <div class="metric-value">
-        {value}
-    </div>
-
+    <div class="metric-icon">{icon}</div>
+    <div class="metric-label">{label}</div>
+    <div class="metric-value">{value}</div>
 </div>
 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.write("")
+    st.write("")
 
     st.markdown(
         """
-<div class="journey-banner">
-
-    <div class="section-label">
-        TODAY'S THOUGHT
+<div class="result-card">
+    <div class="section-label">YOUR CURRENT DIRECTION</div>
+    <div class="result-type">
+        Keep noticing.
     </div>
-
-    <div style="
-        font-family:'Playfair Display',serif;
-        font-size:1.45rem;
-        color:#29332E;
-        margin-top:0.4rem;">
-        Small choices are still choices.
-        You don't need a perfect day to make a meaningful one.
+    <div class="result-small">
+        Wellness is not a finish line. Your profile is a starting point
+        for understanding your rhythm and making small changes that feel sustainable.
     </div>
-
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    st.markdown(
-        '<div class="primary-btn">',
-        unsafe_allow_html=True
-    )
+    st.write("")
+    st.write("")
 
     if st.button(
-        "See today's challenge  →",
-        use_container_width=True
+        "Take today's challenge  →",
+        type="primary",
+        key="wellness_challenge",
     ):
-        navigate("Challenges")
-
-    st.markdown("</div>", unsafe_allow_html=True)
+        go_to("Today's Challenge")
 
 
-# =========================================================
+# ============================================================
 # AYURVEDIC BODY TYPE
-# =========================================================
+# ============================================================
 
-def ayurvedic():
+DOSHA_INFO = {
+    "Vata": {
+        "symbol": "✧",
+        "quality": "Light · Creative · Dynamic",
+        "description": (
+            "Often associated with movement, creativity, flexibility and "
+            "changing energy. Consistency and grounding routines may feel supportive."
+        ),
+    },
+    "Pitta": {
+        "symbol": "◈",
+        "quality": "Focused · Warm · Driven",
+        "description": (
+            "Often associated with focus, intensity, determination and strong "
+            "energy. Balance may come from creating space for cooling and recovery."
+        ),
+    },
+    "Kapha": {
+        "symbol": "◌",
+        "quality": "Steady · Calm · Grounded",
+        "description": (
+            "Often associated with steadiness, patience and grounded energy. "
+            "Variety and regular movement may help maintain momentum."
+        ),
+    },
+}
+
+
+def ayurvedic_page():
 
     if not st.session_state.profile_complete:
 
         st.markdown(
             """
+<div class="section-label">AYURVEDIC BODY TYPE</div>
+<div class="section-title">A pattern is waiting to emerge.</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
 <div class="empty-state">
-
-    <div class="empty-icon">
-        ◌
-    </div>
-
-    <div class="section-label">
-        SOMETHING IS UNFOLDING
-    </div>
-
-    <h2>
-        Your natural wellness pattern is waiting.
-    </h2>
-
+    <div class="empty-symbol">✧</div>
+    <h2>Your result isn't ready yet.</h2>
     <p>
-        Complete your MYBIO journey first.
-        Then come back here to explore your Ayurvedic Body Type.
+        Begin your journey and answer a few questions about your natural
+        tendencies. Your body-type interpretation will appear when the journey is complete.
     </p>
-
 </div>
 """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
+
+        if st.button(
+            "Discover your body type  →",
+            type="primary",
+            key="body_start",
+        ):
+            go_to("Begin Journey")
 
         return
 
+    body_type = st.session_state.ayurvedic_type
+
     st.markdown(
         """
-<div class="section-label">
-    ANCIENT PERSPECTIVE
+<div class="section-label">YOUR AYURVEDIC BODY TYPE</div>
+<div class="section-title">A window into your natural rhythm.</div>
+<div class="section-description">
+Ayurvedic traditions describe three broad patterns of qualities.
+Your result is an educational interpretation of the answers you shared.
 </div>
-
-<div class="section-title">
-    Your Ayurvedic Body Type
-</div>
-
-<p class="section-text">
-    Ayurveda describes three broad tendencies associated with
-    movement, transformation and stability. Your result is an
-    introductory wellness interpretation based on your responses.
-</p>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    types = [
-
-        (
-            "Vata",
-            "◌",
-            "Movement & adaptability",
-            "Often associated with lightness, creativity,
-            variability and movement."
-        ),
-
-        (
-            "Pitta",
-            "☀",
-            "Transformation & focus",
-            "Often associated with intensity, focus,
-            warmth and purposeful action."
-        ),
-
-        (
-            "Kapha",
-            "◒",
-            "Stability & grounding",
-            "Often associated with steadiness,
-            endurance, calmness and grounding."
-        )
-    ]
-
-    cols = st.columns(3)
-
-    for col, (
-        name,
-        icon,
-        subtitle,
-        description
-    ) in zip(cols, types):
-
-        with col:
-
-            if name in st.session_state.ayurvedic_type:
-
-                border = (
-                    "2px solid #C9A66B;"
-                    "background:#FAF4E9;"
-                )
-
-            else:
-
-                border = (
-                    "1px solid rgba(41,51,46,0.08);"
-                )
-
-            st.markdown(
-                f"""
-<div class="type-card"
-     style="border:{border};">
-
-    <div class="type-icon">
-        {icon}
-    </div>
-
-    <h3>
-        {name}
-    </h3>
-
-    <div class="type-subtitle">
-        {subtitle}
-    </div>
-
-    <p>
-        {description}
-    </p>
-
-</div>
-""",
-                unsafe_allow_html=True
-            )
 
     st.markdown(
         f"""
 <div class="result-card">
-
-    <div class="section-label">
-        YOUR RESULT
+    <div style="font-size:42px;">✦</div>
+    <div class="section-label">YOUR CURRENT PATTERN</div>
+    <div class="result-type">{body_type}</div>
+    <div class="result-small">
+        Your answers suggest a {body_type} pattern.
+        Use this as a lens for reflection rather than a diagnosis.
     </div>
-
-    <h2>
-        {st.session_state.ayurvedic_type}
-    </h2>
-
-    <p style="
-        position:relative;
-        z-index:2;
-        color:#56625B;
-        max-width:600px;
-        margin:auto;
-        line-height:1.8;">
-        This is the pattern that appeared most strongly
-        across your responses in this introductory experience.
-    </p>
-
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
+    st.write("")
+    st.write("")
+
+    cols = st.columns(3)
+
+    for col, (name, info) in zip(cols, DOSHA_INFO.items()):
+        with col:
+            st.markdown(
+                f"""
+<div class="feature-card">
+    <div class="feature-icon">{info["symbol"]}</div>
+    <h3>{name}</h3>
+    <div style="
+        color:#C5A46D;
+        font-size:12px;
+        font-weight:700;
+        margin-bottom:12px;
+    ">
+        {info["quality"]}
+    </div>
+    <p>{info["description"]}</p>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+    st.write("")
     st.caption(
-        "MYBIO provides an educational wellness interpretation "
-        "and does not replace medical diagnosis or professional care."
+        "Educational note: Ayurvedic body-type concepts are traditional wellness concepts "
+        "and should not be used to diagnose or treat medical conditions."
     )
 
 
-# =========================================================
+# ============================================================
 # CHALLENGES
-# =========================================================
+# ============================================================
 
-def challenges():
+CHALLENGES = [
+    {
+        "title": "The Hydration Pause",
+        "description": (
+            "Take a quiet moment during your day and drink one full glass of water "
+            "without rushing through it."
+        ),
+        "purpose": (
+            "A tiny pause can turn an automatic habit into a mindful one."
+        ),
+        "badge": "💧",
+        "badge_name": "Hydration Hero",
+        "xp": 20,
+    },
+    {
+        "title": "The Movement Minute",
+        "description": (
+            "Give yourself ten minutes of intentional movement today. Walk, stretch, "
+            "dance or simply move in a way that feels comfortable."
+        ),
+        "purpose": (
+            "Movement doesn't have to be intense to become part of your rhythm."
+        ),
+        "badge": "🌿",
+        "badge_name": "Move With Intention",
+        "xp": 25,
+    },
+    {
+        "title": "The Mindful Plate",
+        "description": (
+            "Choose one meal today and slow down. Put away distractions, notice "
+            "the food in front of you and give yourself time to eat."
+        ),
+        "purpose": (
+            "Awareness can change the way an ordinary meal feels."
+        ),
+        "badge": "🍃",
+        "badge_name": "Mindful Nourisher",
+        "xp": 25,
+    },
+    {
+        "title": "The Evening Reset",
+        "description": (
+            "Create twenty quiet minutes before sleep with your main screen away."
+        ),
+        "purpose": (
+            "A gentle transition can help separate the end of the day from the beginning of rest."
+        ),
+        "badge": "🌙",
+        "badge_name": "Evening Guardian",
+        "xp": 30,
+    },
+]
 
-    if not st.session_state.profile_complete:
 
-        st.markdown(
-            """
-<div class="empty-state">
+def complete_challenge(index):
 
-    <div class="empty-icon">
-        ✦
-    </div>
+    if index not in st.session_state.completed_challenges:
 
-    <div class="section-label">
-        YOUR NEXT STEP
-    </div>
+        st.session_state.completed_challenges.append(index)
 
-    <h2>
-        Your first little challenge is waiting.
-    </h2>
+        challenge = CHALLENGES[index]
 
-    <p>
-        Begin your MYBIO journey first.
-        Once you are ready, one small action will appear here —
-        never a hundred things at once.
-    </p>
+        st.session_state.xp += challenge["xp"]
 
-</div>
-""",
-            unsafe_allow_html=True
-        )
+        if st.session_state.last_completed_date != str(date.today()):
+            st.session_state.streak += 1
+            st.session_state.last_completed_date = str(date.today())
 
-        return
+        if challenge["badge_name"] not in st.session_state.badges:
+            st.session_state.badges.append(challenge["badge_name"])
 
-    completed = st.session_state.completed_challenges
+        st.session_state.last_reward = {
+            "title": challenge["badge_name"],
+            "badge": challenge["badge"],
+            "xp": challenge["xp"],
+        }
 
-    remaining = [
-        i
-        for i in range(len(challenges_data))
-        if i not in completed
-    ]
+    st.session_state.active_challenge = False
+    st.rerun()
 
-    # -----------------------------------------------------
-    # ALL CHALLENGES COMPLETE
-    # -----------------------------------------------------
 
-    if not remaining:
-
-        st.markdown(
-            """
-<div class="empty-state">
-
-    <div class="empty-icon">
-        ✦
-    </div>
-
-    <div class="section-label">
-        LOOK HOW FAR YOU'VE COME
-    </div>
-
-    <h2>
-        You showed up for yourself.
-    </h2>
-
-    <p>
-        Every small action became part of your rhythm.
-        There is nothing left to prove — just more to discover.
-    </p>
-
-</div>
-""",
-            unsafe_allow_html=True
-        )
-
-        return
-
-    current_index = remaining[0]
-
-    challenge = challenges_data[
-        current_index
-    ]
+def challenge_page():
 
     st.markdown(
         """
-<div style="text-align:center;">
-
-    <div class="section-label">
-        ONE SMALL STEP
-    </div>
-
-    <div class="section-title">
-        Today's Challenge
-    </div>
-
-    <p class="section-text" style="margin:auto;">
-        You don't need to change everything.
-        Just do this one thing.
-    </p>
-
+<div class="section-label">TODAY'S MOMENT</div>
+<div class="section-title">One small move.</div>
+<div class="section-description">
+Don't change everything. Choose one thing you can actually do today.
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Show reward AFTER completion.
+    if st.session_state.last_reward is not None:
 
-    st.markdown(
-        '<div class="challenge-shell">',
-        unsafe_allow_html=True
-    )
+        reward = st.session_state.last_reward
+
+        st.markdown(
+            f"""
+<div class="reward-card">
+    <div class="badge">{reward["badge"]}</div>
+
+    <div class="section-label">YOU DID IT</div>
+
+    <div class="reward-title">
+        {reward["title"]}
+    </div>
+
+    <div class="reward-xp">
+        +{reward["xp"]} XP · Streak {st.session_state.streak} day
+    </div>
+
+    <p style="
+        color:#78817B;
+        line-height:1.7;
+        max-width:500px;
+        margin:15px auto 0;
+    ">
+        One small action is still an action.
+        Keep going at your own pace.
+    </p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.write("")
+
+        if st.button(
+            "Continue  →",
+            type="primary",
+            key="reward_continue",
+        ):
+            st.session_state.last_reward = None
+            st.rerun()
+
+        return
+
+    # Find next challenge.
+    next_index = None
+
+    for i in range(len(CHALLENGES)):
+        if i not in st.session_state.completed_challenges:
+            next_index = i
+            break
+
+    if next_index is None:
+
+        st.markdown(
+            """
+<div class="empty-state">
+    <div class="empty-symbol">✦</div>
+    <h2>You completed the current collection.</h2>
+    <p>
+        Your consistency is becoming part of your story.
+        Come back as your journey continues.
+    </p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        return
+
+    challenge = CHALLENGES[next_index]
 
     st.markdown(
         f"""
 <div class="challenge-card">
 
-    <div class="challenge-icon">
-        {challenge["icon"]}
-    </div>
-
     <div class="challenge-number">
-        STEP {len(completed) + 1}
+        CHALLENGE {next_index + 1:02d}
     </div>
 
-    <h2>
+    <div class="challenge-title">
         {challenge["title"]}
-    </h2>
+    </div>
 
-    <div class="challenge-task">
-        {challenge["task"]}
+    <div class="challenge-description">
+        {challenge["description"]}
+    </div>
+
+    <div class="challenge-purpose">
+        <strong>Why this moment?</strong><br>
+        {challenge["purpose"]}
     </div>
 
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.write("")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # -----------------------------------------------------
-    # START
-    # -----------------------------------------------------
-
-    if not st.session_state.started:
-
-        st.markdown(
-            '<div class="primary-btn">',
-            unsafe_allow_html=True
-        )
+    if not st.session_state.active_challenge:
 
         if st.button(
             "Start this challenge  →",
-            key=f"start_{current_index}",
-            use_container_width=True
+            type="primary",
+            key=f"start_challenge_{next_index}",
         ):
-
-            st.session_state.started = True
-
+            st.session_state.active_challenge = True
             st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # -----------------------------------------------------
-    # IN PROGRESS
-    # -----------------------------------------------------
 
     else:
 
@@ -3079,569 +2089,431 @@ def challenges():
             """
 <div style="
     text-align:center;
-    padding:1rem;
-    color:#65745D;
-    font-weight:600;">
-    ✦ Take your time. Come back when you've done it.
+    padding:15px;
+    color:#647762;
+    font-weight:600;
+">
+    ✦ This moment is yours. Take your time.
 </div>
 """,
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            '<div class="primary-btn">',
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
         if st.button(
             "I completed it  ✓",
-            key=f"complete_{current_index}",
-            use_container_width=True
+            type="primary",
+            key=f"complete_challenge_{next_index}",
         ):
-
-            st.session_state.completed_challenges.append(
-                current_index
-            )
-
-            st.session_state.xp += challenge["xp"]
-
-            st.session_state.streak += 1
-
-            st.session_state.started = False
-
-            st.session_state.last_completed = current_index
-
-            st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # -----------------------------------------------------
-    # REWARD ONLY AFTER COMPLETION
-    # -----------------------------------------------------
-
-    if (
-        st.session_state.last_completed
-        is not None
-        and st.session_state.last_completed
-        == current_index
-    ):
-
-        st.markdown(
-            f"""
-<div class="reward-card">
-
-    <div class="badge">
-        {challenge["badge"]}
-    </div>
-
-    <h3>
-        {challenge["reward"]}
-    </h3>
-
-    <p style="color:#56625B;">
-        +{challenge["xp"]} XP
-    </p>
-
-</div>
-""",
-            unsafe_allow_html=True
-        )
+            complete_challenge(next_index)
 
 
-# =========================================================
-# STREAK / RHYTHM
-# =========================================================
+# ============================================================
+# MY RHYTHM
+# ============================================================
 
-def streak():
-
-    if not st.session_state.profile_complete:
-
-        st.markdown(
-            """
-<div class="empty-state">
-
-    <div class="empty-icon">
-        ✧
-    </div>
-
-    <div class="section-label">
-        YOUR RHYTHM WILL COME
-    </div>
-
-    <h2>
-        Nothing to count yet.
-    </h2>
-
-    <p>
-        Begin your journey first.
-        Your rhythm will grow naturally from the small things
-        you choose to do.
-    </p>
-
-</div>
-""",
-            unsafe_allow_html=True
-        )
-
-        return
-
-    current = st.session_state.streak
+def rhythm_page():
 
     st.markdown(
         """
-<div style="text-align:center;">
-
-    <div class="section-label">
-        YOUR RHYTHM
-    </div>
-
-    <div class="section-title">
-        Consistency has its own magic.
-    </div>
-
-    <p class="section-text" style="margin:auto;">
-        A streak isn't about perfection.
-        It is simply a reminder that you kept showing up.
-    </p>
-
+<div class="section-label">MY RHYTHM</div>
+<div class="section-title">Consistency, not perfection.</div>
+<div class="section-description">
+Your streak is a reminder of the moments you've chosen to show up.
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-
-    st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown(
         f"""
-<div class="streak-hero">
+<div class="streak-card">
+
+    <div class="section-label">CURRENT STREAK</div>
 
     <div class="streak-number">
-        {current}
-    </div>
-
-    <div class="streak-word">
-        day rhythm
-    </div>
-
-    <p style="
-        color:#56625B;
-        margin-top:1rem;">
-        Keep going. Your next small step matters.
-    </p>
-
-</div>
-""",
-        unsafe_allow_html=True
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    cols = st.columns(7)
-
-    days = [
-        "M",
-        "T",
-        "W",
-        "T",
-        "F",
-        "S",
-        "S"
-    ]
-
-    for i, (col, day) in enumerate(
-        zip(cols, days)
-    ):
-
-        active = i < min(current, 7)
-
-        with col:
-
-            class_name = (
-                "day-box day-active"
-                if active
-                else "day-box"
-            )
-
-            symbol = "✦" if active else "·"
-
-            st.markdown(
-                f"""
-<div class="{class_name}">
-
-    <div class="day-letter">
-        {day}
+        {st.session_state.streak}
     </div>
 
     <div style="
-        font-size:1.2rem;
-        margin-top:0.35rem;">
-        {symbol}
+        color:#78817B;
+        margin-top:8px;
+    ">
+        day{"s" if st.session_state.streak != 1 else ""}
     </div>
 
 </div>
 """,
-                unsafe_allow_html=True
-            )
+        unsafe_allow_html=True,
+    )
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.write("")
+    st.write("")
 
     st.markdown(
         """
-<div class="badges-title">
-    Your badges
-</div>
-
-<p style="color:#56625B;">
-    Every badge marks something you chose to do for yourself.
-</p>
+<div class="section-label">YOUR WEEK</div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 
-    badges = completed_badges()
+    cols = st.columns(7)
 
-    badge_cols = st.columns(4)
+    active_count = min(st.session_state.streak, 7)
 
-    for i, challenge in enumerate(
-        challenges_data
-    ):
+    for i, (col, day_name) in enumerate(zip(cols, days)):
+        active = i >= 7 - active_count
 
-        unlocked = i < len(
-            st.session_state.completed_challenges
-        )
-
-        with badge_cols[i]:
-
-            class_name = (
-                "badge-small"
-                if unlocked
-                else "badge-small badge-locked"
-            )
-
-            icon = (
-                challenge["badge"]
-                if unlocked
-                else "?"
-            )
-
+        with col:
             st.markdown(
                 f"""
-<div class="{class_name}">
-
-    <div class="badge-small-icon">
-        {icon}
-    </div>
-
-    <div class="badge-small-name">
-        {challenge["reward"]}
-    </div>
-
+<div class="day-pill {"active" if active else ""}">
+    <div class="day-name">{day_name}</div>
+    <div class="day-dot">{"✦" if active else "·"}</div>
 </div>
 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
+    st.write("")
+    st.write("")
 
-# =========================================================
+    st.markdown(
+        """
+<div class="section-label">YOUR COLLECTION</div>
+<div class="section-title" style="font-size:32px;">
+Badges you've earned.
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    if not st.session_state.badges:
+
+        st.markdown(
+            """
+<div class="empty-state" style="padding:45px 25px;">
+    <div class="empty-symbol">◇</div>
+    <h2>Your first badge is waiting.</h2>
+    <p>
+        Complete a challenge to begin building your collection.
+    </p>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    else:
+
+        earned = []
+
+        for challenge in CHALLENGES:
+            if challenge["badge_name"] in st.session_state.badges:
+                earned.append(challenge)
+
+        cols = st.columns(min(4, len(earned)))
+
+        for col, challenge in zip(cols, earned):
+            with col:
+                st.markdown(
+                    f"""
+<div class="badge-card">
+    <div class="badge-icon">{challenge["badge"]}</div>
+    <div class="badge-name">{challenge["badge_name"]}</div>
+    <div class="badge-muted">Earned</div>
+</div>
+""",
+                    unsafe_allow_html=True,
+                )
+
+
+# ============================================================
 # RECOMMENDATIONS
-# =========================================================
+# ============================================================
 
 def recommendations():
+
+    st.markdown(
+        """
+<div class="section-label">FOR YOU</div>
+<div class="section-title">A few gentle nudges.</div>
+<div class="section-description">
+Suggestions shaped around the rhythm you shared — not a rigid prescription.
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
     if not st.session_state.profile_complete:
 
         st.markdown(
             """
 <div class="empty-state">
-
-    <div class="empty-icon">
-        ♡
-    </div>
-
-    <div class="section-label">
-        SOMETHING MADE FOR YOU
-    </div>
-
-    <h2>
-        Your space will become personal.
-    </h2>
-
+    <div class="empty-symbol">✧</div>
+    <h2>There is more to discover.</h2>
     <p>
-        Complete your journey first.
-        Then come back for a few thoughtful ideas shaped around
-        the answers you shared.
+        Complete your journey and this space will begin to reflect
+        the patterns you've shared.
     </p>
-
 </div>
 """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
+
+        if st.button(
+            "Begin discovering  →",
+            type="primary",
+            key="recommendation_start",
+        ):
+            go_to("Begin Journey")
 
         return
 
     answers = st.session_state.answers
-
     recommendations_list = []
 
-    if answers.get("sleep") in [
-        "Less than 5 hours",
-        "5–7 hours"
-    ]:
+    sleep = answers.get("sleep")
 
+    if sleep is not None and sleep < 7:
         recommendations_list.append(
             (
-                "☾",
-                "Give rest a little more room",
-                "Try creating a consistent wind-down period
-                before sleep rather than waiting until you
-                are completely exhausted."
+                "01",
+                "Make room for rest",
+                "Try creating a calmer transition into sleep rather than waiting until you're already exhausted.",
+                "🌙",
             )
         )
 
-    if answers.get("activity") in [
-        "Mostly seated",
-        "Light movement"
-    ]:
+    stress = answers.get("stress")
 
+    if stress in ["Moderate", "High"]:
         recommendations_list.append(
             (
-                "↗",
-                "Bring movement into ordinary moments",
-                "A short walk, gentle stretch or movement break
-                can be easier to maintain than waiting for
-                the perfect workout."
+                "02",
+                "Create a pause",
+                "A short breathing break, walk or quiet moment can give your day a little more space.",
+                "◌",
             )
         )
 
-    if answers.get("junk") in [
-        "Several times",
-        "Almost every day"
-    ]:
+    movement = answers.get("activity_minutes")
 
+    if movement is not None and movement < 30:
         recommendations_list.append(
             (
-                "◉",
-                "Change one meal, not everything",
-                "Start with one meal that feels more balanced
-                and nourishing instead of trying to completely
-                redesign your eating habits overnight."
+                "03",
+                "Move a little more",
+                "Try adding a short walk or stretch session rather than aiming for a large workout immediately.",
+                "🌿",
             )
         )
 
-    if answers.get("meal_timing") in [
-        "Sometimes irregular",
-        "Very irregular"
-    ]:
+    meal_timing = answers.get("meal_timing")
 
+    if meal_timing in ["Very unpredictable", "Somewhat unpredictable"]:
         recommendations_list.append(
             (
-                "◷",
-                "Create a little rhythm",
-                "More predictable meal timings may help your
-                day feel less scattered."
+                "04",
+                "Find one anchor meal",
+                "Choose one meal of the day to keep relatively consistent. One anchor is enough to begin.",
+                "🍃",
             )
         )
 
     if not recommendations_list:
-
-        recommendations_list.append(
+        recommendations_list = [
             (
+                "01",
+                "Protect your rhythm",
+                "Notice which routines already work for you and protect them before adding more changes.",
                 "✦",
-                "Keep what is already working",
-                "Your responses suggest several positive patterns.
-                Focus on consistency rather than constantly
-                adding more."
-            )
-        )
+            ),
+            (
+                "02",
+                "Keep it simple",
+                "Choose one small habit and repeat it consistently before adding another.",
+                "◇",
+            ),
+            (
+                "03",
+                "Notice before changing",
+                "Spend a few minutes each day noticing your energy, mood and routines without judging them.",
+                "◌",
+            ),
+        ]
 
-    st.markdown(
-        """
-<div class="section-label">
-    A LITTLE SOMETHING FOR YOU
-</div>
-
-<div class="section-title">
-    Your wellness notes.
-</div>
-
-<p class="section-text">
-    A few gentle ideas based on the patterns you shared.
-    Take what feels useful and leave what doesn't.
-</p>
-""",
-        unsafe_allow_html=True
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    for icon, title, text in recommendations_list:
+    for number, title, text, icon in recommendations_list:
 
         st.markdown(
             f"""
-<div class="recommendation">
+<div class="feature-card" style="margin-bottom:15px; min-height:auto;">
 
-    <div class="recommendation-icon">
-        {icon}
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:20px;
+    ">
+
+        <div>
+            <div class="section-label">{number}</div>
+            <h3>{title}</h3>
+            <p>{text}</p>
+        </div>
+
+        <div style="
+            font-size:34px;
+            min-width:50px;
+            text-align:center;
+        ">
+            {icon}
+        </div>
+
     </div>
-
-    <h3>
-        {title}
-    </h3>
-
-    <p>
-        {text}
-    </p>
 
 </div>
 """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
     st.caption(
-        "MYBIO provides general wellness information and does "
-        "not replace professional medical or nutritional advice."
+        "These suggestions are for general wellness and are not medical advice."
     )
 
 
-# =========================================================
+# ============================================================
 # ABOUT
-# =========================================================
+# ============================================================
 
-def about():
+def about_page():
 
     st.markdown(
         """
-<div style="text-align:center;">
+<div class="section-label">ABOUT MYBIO</div>
 
-    <div class="section-label">
-        THE IDEA BEHIND MYBIO
-    </div>
+<div class="section-title">
+    Ancient wisdom. Modern you.
+</div>
 
-    <div class="section-title">
-        Wellness begins with awareness.
-    </div>
-
-    <p class="section-text" style="margin:auto;">
-        MYBIO was imagined around a simple idea:
-        understanding yourself can be the beginning of
-        better everyday choices.
-    </p>
-
+<div class="section-description">
+    MYBIO is designed around a simple idea:
+    understanding yourself can be the beginning of better everyday choices.
 </div>
 """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    cols = st.columns(2)
 
-    about_cards = [
-
-        (
-            "✦",
-            "Ancient perspective. Contemporary experience.",
-            "MYBIO brings an Ayurvedic perspective together with
-            everyday lifestyle reflection in a way that feels
-            familiar, visual and personal."
-        ),
-
-        (
-            "◌",
-            "Designed around the individual.",
-            "Instead of overwhelming you with endless information,
-            MYBIO creates a simple journey where each step
-            builds on the last."
-        ),
-
-        (
-            "∞",
-            "A journey, not a judgement.",
-            "There is no perfect version of you waiting at the end.
-            The goal is awareness, consistency and small changes
-            that feel possible."
-        )
-    ]
-
-    for icon, title, text in about_cards:
+    with cols[0]:
 
         st.markdown(
-            f"""
-<div class="feature-card"
-     style="margin-bottom:1rem;">
+            """
+<div class="feature-card" style="min-height:280px;">
 
-    <div class="feature-icon">
-        {icon}
-    </div>
+    <div class="feature-icon">✦</div>
 
-    <h3>
-        {title}
-    </h3>
+    <h3>A reflective journey</h3>
 
     <p>
-        {text}
+        MYBIO asks you to pause and notice your patterns —
+        your energy, nourishment, movement, sleep and daily rhythm.
+        The goal is not perfection. It is awareness.
     </p>
 
 </div>
 """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
+    with cols[1]:
 
-# =========================================================
+        st.markdown(
+            """
+<div class="feature-card" style="min-height:280px;">
+
+    <div class="feature-icon">◌</div>
+
+    <h3>Inspired by tradition</h3>
+
+    <p>
+        Ayurvedic concepts are presented as traditional wellness
+        perspectives for reflection. They should not replace
+        professional medical advice, diagnosis or treatment.
+    </p>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+    st.write("")
+    st.write("")
+
+    st.markdown(
+        """
+<div class="result-card">
+
+    <div class="section-label">THE MYBIO PHILOSOPHY</div>
+
+    <div class="result-type">
+        Small shifts. Deeper balance.
+    </div>
+
+    <div class="result-small">
+        Your journey doesn't need to look like anyone else's.
+        Start where you are. Notice what matters.
+        Take the next small step.
+    </div>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+# ============================================================
 # ROUTER
-# =========================================================
+# ============================================================
 
-page = st.session_state.page
+if st.session_state.page == "Home":
+    home_page()
 
-if page == "Home":
-    home()
+elif st.session_state.page == "Begin Journey":
+    journey_page()
 
-elif page == "Questionnaire":
-    questionnaire()
+elif st.session_state.page == "My Wellness":
+    wellness_page()
 
-elif page == "Body":
-    body()
+elif st.session_state.page == "Ayurvedic Body Type":
+    ayurvedic_page()
 
-elif page == "Ayurvedic":
-    ayurvedic()
+elif st.session_state.page == "Today's Challenge":
+    challenge_page()
 
-elif page == "Challenges":
-    challenges()
+elif st.session_state.page == "My Rhythm":
+    rhythm_page()
 
-elif page == "Streak":
-    streak()
-
-elif page == "Recommendations":
+elif st.session_state.page == "For You":
     recommendations()
 
-elif page == "About":
-    about()
+elif st.session_state.page == "About":
+    about_page()
 
 
-# =========================================================
+# ============================================================
 # FOOTER
-# =========================================================
+# ============================================================
 
 st.markdown(
     """
 <div class="footer">
-
-    <b>MYBIO</b>
-    <br>
-
-    Ancient Wisdom
-    <span style="color:#C9A66B;">✦</span>
-    Modern You
-    <span style="color:#C9A66B;">✦</span>
-    Infinite Possibilities
-
+    MYBIO &nbsp;·&nbsp;
+    ANCIENT WISDOM · MODERN YOU · INFINITE POSSIBILITIES
     <br><br>
-
-    A personal wellness exploration experience —
-    created for awareness, reflection and everyday growth.
-
+    Designed for reflection, everyday wellness and intentional living.
 </div>
 """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
